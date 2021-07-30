@@ -1,0 +1,454 @@
+
+$(".canvas_holder").resizable();
+
+const url = "./docs/pdf.pdf";
+
+let pdfDoc = null,
+    pageNum = 1,
+    scale = 1.5,
+    isPortrait = true,
+    textItems = [],
+    pageIsRendering = false,
+    pageNumIsPending = null;
+
+const canvas = document.querySelector('#pdf-render'),
+      ctx = canvas.getContext('2d');
+
+// Render the page
+const renderPage = num => {
+    pageIsRendering = true;
+
+    // Get page
+    pdfDoc.getPage(num).then(page => {
+
+        let viewport = page.getViewport({scale});
+        
+        if(viewport.width < viewport.height){
+            isPortrait = true;
+            scale = 1.5;
+        }else{
+            isPortrait = false;
+            scale = 1;
+        }
+
+        // Set scale
+        viewport = page.getViewport({scale});
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        const renderContext = {
+            canvasContext: ctx,
+            viewport
+        }
+
+        page.render(renderContext).promise.then(()=>{
+            pageIsRendering = false;
+
+            if(pageNumIsPending !==null){
+                renderPage(pageNumIsPending);
+                pageNumIsPending = null;
+            }
+        });
+
+        // Output current page
+        document.querySelector('#page-num').textContent = num;
+    });
+};
+
+// VERIFICARE EXCEPTII FORMAT MINIM
+const eFaraMin = elem =>{
+    let sir = ["COAX", "LOCA", "BT.S", "PLAN", "RECT", "PERP", "PARA", "CYL", "CIRC", "FLTN"];
+    let rezultat = false;
+    sir.forEach(ex => {
+        if(ex==elem){
+            rezultat = true;
+        }
+    });
+    return rezultat;
+};
+
+let produs = "";
+
+// Get PDF content as text
+const text = ()=>{
+    document.querySelector('#output').innerHTML = "";
+    let titluNesetat = true;
+    let contor = 0;
+
+    textItems = [];
+
+    let x = 1;
+
+    const myLoop = (x) =>{
+        
+            pdfDoc.getPage(x).then(page => {
+                page.getTextContent().then(function (textContent) { 
+
+                    console.log(textContent)
+                    console.log("=============================================================================================================================")
+    
+                    // INCEPUT DE PAGINA
+                    document.querySelector('#output').innerHTML += `<h3>Pagina ${(textItems.length+1)}</h3>`;
+                    
+                    textItems.push(textContent.items);
+                    if(titluNesetat){
+
+                        $(".fields").val("");
+
+                        let titlu = (isPortrait) ? textContent.items[textContent.items.length-4].str.split("-") : textContent.items[textContent.items.length-8].str.split("-");
+
+
+                        if(titlu[0]=="Date:"){
+                            titlu = textContent.items[textContent.items.length-4].str.split("-");
+                            // console.log("date: -4");
+                        }
+
+                        if(titlu[0]=="Date:"){
+                            titlu = textContent.items[textContent.items.length-10].str.split("-");
+                            // console.log("date: -10");
+                        }
+
+                        if(titlu[0]=="Operator:" || titlu[0]=="Control Equipment:"){
+                            titlu = textContent.items[textContent.items.length-6].str.split("-");
+                            // console.log("operator/control equipment: -6");
+                        }
+
+                        if(titlu[0].replace(/\s/g, "")=="TRP"){
+                            titlu = textContent.items[textContent.items.length-8].str.split("-");
+                            // console.log("trp: -8");
+                        }
+    
+                        let ids = ["titlu", "cavitate", "data", "ora", "injectare"];
+
+                        // console.log(titlu);
+    
+                        titlu.forEach( (el,i) =>{
+                            let element = el.replace(/\s/g, "");
+                            if(i==0){
+                                element = element.replace("_", "/");
+                                produs = element;
+                            }
+                            if(typeof ids[i] === 'undefined') {}else{
+                                document.querySelector(`#${ids[i]}`).value = element;
+                            }                        
+                        });
+                        
+                        
+                        titluNesetat = false;
+                    }
+                    
+                    for(let y=0; y<textContent.items.length; y++){
+                        let val = textContent.items[y].str;
+                        let nrVal = Number(textContent.items[y].str);
+    
+                        if (val==" "){ nrVal = "NaN"; }
+
+                        console.log("loop : "+textContent.items[y].str+" index : "+y);
+
+                        // ELIMINARE INTERPRETARE ERONATA NOMINAL LA y+=5, EX: 
+                        // MAX - C1 / REP 
+                        // 1 (era interpretat ca si nominal)
+                        // IN LOC DE : MAX - C1 / REP1
+                        let conditie = true;
+                        if( (y+1)<textContent.items.length){
+                            let next = textContent.items[y+1].str;
+                            if(isNaN(next) && !isNaN(val) || isNaN(next) && isNaN(val)){ 
+                                conditie = false;
+                                console.log(`%c${val} %c${textContent.items[y+1].str}`, `color: blue`, `color: red`);
+                            }
+                        }
+
+                        // CONDITIE E.F.
+                        if(y){
+                            if(textContent.items[y-1].str=="E.F."){
+                                y+=2;
+                                conditie = false;
+                                console.log(`%c${textContent.items[y-1].str} | ${val}`, `color: orange`);
+                            }
+                        }
+                        
+                        
+                        if(conditie){
+                            if(!isNaN(nrVal)){
+                                
+                                let nominal = nrVal;
+                                let masurat =  Number(textContent.items[y+1].str);
+                                let info_cav =  textContent.items[y-3].str;
+        
+                                if(info_cav==" "){ info_cav = textContent.items[y-5].str; }
+        
+                                let tolMin, tolMax = "";
+        
+                                if(nominal){
+                                    tolMin = Number(textContent.items[y+2].str);
+                                    tolMax = Number(textContent.items[y+3].str);
+                                }else{
+                                    let p = textContent.items[y-1].str.replace(/\s/g, "");
+        
+                                    // console.log("pag: "+x+" : "+p+", linia = "+y);
+        
+                                    if(eFaraMin(p)){
+                                        tolMin = 0;
+                                        tolMax = Number(textContent.items[y+2].str);
+                                    }else{
+                                        tolMin = Number(textContent.items[y+2].str);
+                                        tolMax = Number(textContent.items[y+3].str);
+                                    }
+                                }
+        
+                                let minim = (nominal+tolMin).toFixed(3);
+                                let maxim = (nominal+tolMax).toFixed(3);
+        
+                                let clasa = (masurat>=minim && masurat<=maxim) ? "ok" : "nok";
+        
+                                if(!isNaN(minim) && !isNaN(maxim) ){
+                                    contor++;
+                                    document.querySelector('#output').innerHTML += `<div class='masuratoare'><span class='nrCrt tooltip' data-tooltip='Nr. crt.'>${contor}</span><input type='text' class='index_spc' placeholder='index spc'/><div class="custom_checkbox" title='De afisat clientului, respectiv de inregistrat in SPC'><input type='checkbox' id="id_${contor}" class='checkbox_client' /><label for="id_${contor}"><i class="fas fa-heart"></i></label></div><div class='custom_checkbox' title='Inregistrare valoare masurata in baza de date'><input type='checkbox' id="idn_${contor}" class='checkbox' checked/><label for="idn_${contor}"><i class="fas fa-check-square"></i></label></div><span class='bulina tooltip' data-tooltip='${info_cav}'></span><div class='info'><span class='nominal tooltip' data-tooltip='Nominal'>${nominal}</span> ( <span class='tooltip' data-tooltip='Tol -'>${tolMin}</span> / <span class='tooltip' data-tooltip='Tol +'>${tolMax}</span> )</div><div class='calcul'><span class='minim tooltip' data-tooltip='Minim'>${minim}</span><input type='text' class='valMasurata ${clasa}' value='${masurat}'><span class='tooltip maxim' data-tooltip='Maxim'>${maxim}</span></div></div>`;
+                                }
+                                // else{
+                                //     console.log("%cs-au amestecat mere cu pere", 'background: #222; color: #bada55');
+                                // }
+                                y+=5;
+                            }
+                        }
+                    }
+    
+                    // FINAL DE PAGINA
+                    document.querySelector('#output').innerHTML += `<br>`;
+
+                    // CALLBACK FUNCTION *                  
+                    if(x>pdfDoc.numPages){
+                            // DEBIFARE / BIFARE CASUTE
+                            $.post("php/getIndex.php", {produs}, function(data){   
+                                
+                                let ind = JSON.parse(data.ind_spc);
+
+                                let contorSpc = 0;
+
+                                JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
+                                    console.log(el+" - "+i);
+                                    $(".checkbox").eq(el).prop("checked", false);
+                                });
+
+                                JSON.parse(data.check_fav).forEach( i =>{
+                                    $(".checkbox_client").eq(i).prop("checked", true);
+                                    
+                                    if(typeof ind[contorSpc] === 'undefined'){
+
+                                    }else{
+                                        $(".index_spc").eq(i).val(ind[contorSpc]);
+                                    }
+
+                                    contorSpc++;
+                                });
+
+                                
+
+                                
+                            }, "json");
+                    }
+                });
+
+                x++;
+                if(x<pdfDoc.numPages){  $("#save").addClass("inactiv"); }else{  $("#save").removeClass("inactiv"); }
+
+                if(x<=pdfDoc.numPages){                  
+                    myLoop(x);
+                }
+
+            });  // END PDF PAGE MANIPULATION
+
+    }
+    
+    myLoop(x);
+        
+};
+
+// Check for pages rendering
+const queueRenderPage = num =>{
+    if(pageIsRendering){
+        pageNumIsPending = num;
+    }else{
+        renderPage(num);        
+    }
+}
+
+// Show previous page
+const showPrevPage = () =>{
+
+    if(pdfDoc!=null){
+        if(pageNum <=1){
+            return;
+        }
+        pageNum--;
+        queueRenderPage(pageNum);
+    }
+    
+}
+// Show next page
+const showNextPage = () =>{
+
+    if(pdfDoc!=null){
+        if(pageNum >= pdfDoc.numPages){
+            return;
+        }
+        pageNum++;
+        queueRenderPage(pageNum);
+    }
+}
+
+// Show values
+const showValues = () =>{
+    if(pdfDoc!=null){
+
+        let sirIndexSpc = [];
+        let sirCoteClient = [];
+        let sirValoriMasurate = [];
+        let sirValoriDeInregistrat = [];
+
+        let checkbox = document.querySelectorAll(".checkbox");
+        let checkbox_client = document.querySelectorAll(".checkbox_client");
+        let index_spc = document.querySelectorAll(".index_spc");
+        let valori = document.querySelectorAll(".valMasurata");
+        let minim = document.querySelectorAll(".minim");
+        let nominal = document.querySelectorAll(".nominal");
+        let maxim = document.querySelectorAll(".maxim");
+
+        let indFav = [];
+
+        check_index = true;
+
+        checkbox_client.forEach( (c, i) =>{
+            if(c.checked){
+                sirValoriMasurate.push(valori[i].value);
+
+                let t = `${i} : ${minim[i].innerHTML} / ${nominal[i].innerHTML} /${maxim[i].innerHTML}`;
+                sirCoteClient.push(t);
+                indFav.push(i);
+                
+                if( index_spc[i].value === "" ){
+                    check_index = false;
+                }else{                    
+                    sirIndexSpc.push(index_spc[i].value);
+                }
+                
+            }
+        });
+
+        if(!check_index){ alertify.error("Nu ai completat indecsii necesari cotelor relevante SPC"); return false; }
+
+        checkbox.forEach( (c, i) =>{
+            if(c.checked===false){
+                sirValoriDeInregistrat.push(i);
+            }
+        });
+
+        let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirCoteClient)}|${JSON.stringify(sirValoriDeInregistrat)}|${JSON.stringify(sirIndexSpc)}`;
+        let valoriMasurate = JSON.stringify(sirValoriMasurate);
+
+        let produs = $("#titlu").val();
+        let cav = $("#cavitate").val();
+        let data = $("#data").val();
+        let ora = $("#ora").val();
+        let injectare = $("#injectare").val();
+
+        $.post("php/register.php", {produs, cav, data, ora, injectare, ind_prod, valoriMasurate}, function(response){
+            alertify.alert(response);
+        });
+
+    }else{
+        alertify.error("Nu exista valori de interpretat!");
+    }
+};
+
+// Button events
+document.querySelector('#prev').addEventListener('click', showPrevPage);
+document.querySelector('#next').addEventListener('click', showNextPage);
+document.querySelector('#save').addEventListener('click', showValues);
+
+
+// UPLOAD FILE DRAG & DROP
+function onFile() {
+
+        var file = document.getElementById('upload').files[0];	
+
+        var formData = new FormData();
+        formData.append('fileToUpload', file);				
+            
+            var ajax = new XMLHttpRequest();				
+            ajax.addEventListener('load', completeHandlerUpdate, false);
+            ajax.open('POST', 'php/upload.php');
+            ajax.send(formData);
+}
+
+// COMPLETE HANDLER
+function completeHandlerUpdate(event){	
+
+        $("#upload").val('').clone(true);
+        $(".area").removeClass("dragging");
+
+        switch(event.target.responseText){
+            case 'a' : alertify.error("Nu ati atasat nici un document!"); break;
+            case 'b' : alertify.error("Documentul atasat nu este de tip .pdf!"); break;
+            case 'd' : alertify.error("A aparut o eroare, iar fisierul nu a fost uploadat!"); break;
+            default : getDocument();
+        }
+        
+}
+
+const text2 = () =>{
+    console.log("gata end end");
+};
+
+// GET DOCUMENT
+const getDocument = () =>{
+
+    pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
+        pdfDoc = pdfDoc_;
+
+        pageNum = 1;
+
+        if(pdfDoc.numPages > 1){
+            $("#meniu button").addClass("visible");
+        }else{
+            $("#meniu button").removeClass("visible");
+        }
+        
+        document.querySelector('#pages').textContent = pdfDoc.numPages;
+
+        $("#meniu p").addClass("visible");
+
+        renderPage(pageNum);
+
+        text();
+        
+    })
+    .catch(err =>{
+        // Display error
+        // const div = document.createElement('div');
+        // div.className = 'error';
+        // div.appendChild(document.createTextNode(err.message));
+        // document.querySelector('body').insertBefore(div, canvas);
+
+        console.log(err.message);
+
+    });
+};
+
+let upload = document.getElementById("upload");
+
+upload.addEventListener('dragenter', function (e) {
+    upload.parentNode.className = 'area dragging';
+}, false);
+
+upload.addEventListener('dragleave', function (e) {
+    upload.parentNode.className = 'area';
+}, false);
+
+upload.addEventListener('dragdrop', function (e) {
+    onFile();
+}, false);
+
+upload.addEventListener('change', function (e) {
+    onFile();
+}, false);
