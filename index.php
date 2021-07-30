@@ -24,7 +24,7 @@
         <button id="next">Next</button>
     </div>
     <div class="titlu_holder">
-        <input type="text" class="fields" id="titlu" title="Denumire produs" placeholder="Denumire produs">
+        <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Denumire produs">
         <input type="text" class="fields" id="cavitate" title="Cavitate" placeholder="Cavitate">
         <input type="text" class="fields" id="data" title="Data" placeholder="Data">
         <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora">

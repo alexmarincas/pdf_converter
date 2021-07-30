@@ -9,7 +9,8 @@ let pdfDoc = null,
     isPortrait = true,
     textItems = [],
     pageIsRendering = false,
-    pageNumIsPending = null;
+    pageNumIsPending = null,
+    controlor = "";
 
 const canvas = document.querySelector('#pdf-render'),
       ctx = canvas.getContext('2d');
@@ -57,7 +58,7 @@ const renderPage = num => {
 
 // VERIFICARE EXCEPTII FORMAT MINIM
 const eFaraMin = elem =>{
-    let sir = ["COAX", "LOCA", "BT.S", "PLAN", "RECT", "PERP", "PARA", "CYL", "CIRC", "FLTN"];
+    let sir = ["COAX", "LOCA", "BT.S", "PLAN", "RECT", "PERP", "PARA", "CYL", "CIRC", "FLTN", "Val."];
     let rezultat = false;
     sir.forEach(ex => {
         if(ex==elem){
@@ -84,8 +85,8 @@ const text = ()=>{
             pdfDoc.getPage(x).then(page => {
                 page.getTextContent().then(function (textContent) { 
 
-                    console.log(textContent)
-                    console.log("=============================================================================================================================")
+                    // console.log(textContent)
+                    // console.log("=============================================================================================================================")
     
                     // INCEPUT DE PAGINA
                     document.querySelector('#output').innerHTML += `<h3>Pagina ${(textItems.length+1)}</h3>`;
@@ -95,40 +96,21 @@ const text = ()=>{
 
                         $(".fields").val("");
 
-                        let titlu = (isPortrait) ? textContent.items[textContent.items.length-4].str.split("-") : textContent.items[textContent.items.length-8].str.split("-");
-
-
-                        if(titlu[0]=="Date:"){
-                            titlu = textContent.items[textContent.items.length-4].str.split("-");
-                            // console.log("date: -4");
-                        }
-
-                        if(titlu[0]=="Date:"){
-                            titlu = textContent.items[textContent.items.length-10].str.split("-");
-                            // console.log("date: -10");
-                        }
-
-                        if(titlu[0]=="Operator:" || titlu[0]=="Control Equipment:"){
-                            titlu = textContent.items[textContent.items.length-6].str.split("-");
-                            // console.log("operator/control equipment: -6");
-                        }
-
-                        if(titlu[0].replace(/\s/g, "")=="TRP"){
-                            titlu = textContent.items[textContent.items.length-8].str.split("-");
-                            // console.log("trp: -8");
-                        }
+                        let titlu = isPortrait ? textContent.items[6].str.split("-") : textContent.items[4].str.split("-");
+                        controlor = isPortrait ? textContent.items[2].str : textContent.items[1].str;
     
-                        let ids = ["titlu", "cavitate", "data", "ora", "injectare"];
+                        let ids = titlu.length === 4 ?  ["produs", "cavitate", "data", "ora"] : ["produs", "data", "ora"];
 
-                        // console.log(titlu);
-    
+                        
+
+
                         titlu.forEach( (el,i) =>{
                             let element = el.replace(/\s/g, "");
                             if(i==0){
                                 element = element.replace("_", "/");
                                 produs = element;
                             }
-                            if(typeof ids[i] === 'undefined') {}else{
+                            if(typeof ids[i] !== 'undefined'){
                                 document.querySelector(`#${ids[i]}`).value = element;
                             }                        
                         });
@@ -138,12 +120,13 @@ const text = ()=>{
                     }
                     
                     for(let y=0; y<textContent.items.length; y++){
+                        
                         let val = textContent.items[y].str;
-                        let nrVal = Number(textContent.items[y].str);
+                        let nrVal = Number(val);
     
                         if (val==" "){ nrVal = "NaN"; }
 
-                        console.log("loop : "+textContent.items[y].str+" index : "+y);
+                        // console.log("loop 5 : "+val+" index : "+y);
 
                         // ELIMINARE INTERPRETARE ERONATA NOMINAL LA y+=5, EX: 
                         // MAX - C1 / REP 
@@ -154,25 +137,27 @@ const text = ()=>{
                             let next = textContent.items[y+1].str;
                             if(isNaN(next) && !isNaN(val) || isNaN(next) && isNaN(val)){ 
                                 conditie = false;
-                                console.log(`%c${val} %c${textContent.items[y+1].str}`, `color: blue`, `color: red`);
+                                // console.log(`%c${val} %c${textContent.items[y+1].str}`, `color: blue`, `color: red`);
                             }
                         }
 
                         // CONDITIE E.F.
                         if(y){
-                            if(textContent.items[y-1].str=="E.F."){
+                            if(textContent.items[y-1].str==="E.F."){
                                 y+=2;
                                 conditie = false;
-                                console.log(`%c${textContent.items[y-1].str} | ${val}`, `color: orange`);
+                                // console.log(`%c${textContent.items[y-1].str} | ${val}`, `color: orange`);
                             }
                         }
                         
                         
                         if(conditie){
                             if(!isNaN(nrVal)){
+
+                                console.log(`%c${textContent.items[y-2].str} | ${val}`, `color: orange`);
                                 
                                 let nominal = nrVal;
-                                let masurat =  Number(textContent.items[y+1].str);
+                                let masurat =  isPortrait ? Number(textContent.items[y+2].str) : Number(textContent.items[y+2].str);
                                 let info_cav =  textContent.items[y-3].str;
         
                                 if(info_cav==" "){ info_cav = textContent.items[y-5].str; }
@@ -180,24 +165,27 @@ const text = ()=>{
                                 let tolMin, tolMax = "";
         
                                 if(nominal){
-                                    tolMin = Number(textContent.items[y+2].str);
-                                    tolMax = Number(textContent.items[y+3].str);
+                                    tolMin = Number(textContent.items[y+4].str);
+                                    tolMax = Number(textContent.items[y+6].str);
                                 }else{
-                                    let p = textContent.items[y-1].str.replace(/\s/g, "");
+                                    let p = isPortrait ? textContent.items[y-2].str.replace(/\s/g, "") : textContent.items[y-1].str.replace(/\s/g, "");
         
-                                    // console.log("pag: "+x+" : "+p+", linia = "+y);
+                                    // console.log("nominal 0 => pag: "+x+" : "+p+", linia = "+y);
         
                                     if(eFaraMin(p)){
                                         tolMin = 0;
-                                        tolMax = Number(textContent.items[y+2].str);
+                                        tolMax = isPortrait ? Number(textContent.items[y+4].str) : Number(textContent.items[y+4].str);
                                     }else{
-                                        tolMin = Number(textContent.items[y+2].str);
-                                        tolMax = Number(textContent.items[y+3].str);
+                                        tolMin = isPortrait ? Number(textContent.items[y+4].str) : Number(textContent.items[y+4].str);
+                                        tolMax = isPortrait ? Number(textContent.items[y+6].str) : Number(textContent.items[y+6].str);
                                     }
                                 }
         
                                 let minim = (nominal+tolMin).toFixed(3);
                                 let maxim = (nominal+tolMax).toFixed(3);
+
+                                console.log(`%c${tolMin} | ${tolMax}`, `color: red`);
+                                console.log(`%c${minim} | ${maxim}`, `color: blue`);
         
                                 let clasa = (masurat>=minim && masurat<=maxim) ? "ok" : "nok";
         
@@ -208,7 +196,9 @@ const text = ()=>{
                                 // else{
                                 //     console.log("%cs-au amestecat mere cu pere", 'background: #222; color: #bada55');
                                 // }
-                                y+=5;
+
+                                // y += isPortrait ? 5 : 5;
+                                y+=10
                             }
                         }
                     }
