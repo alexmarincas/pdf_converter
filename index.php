@@ -24,11 +24,13 @@
         <button id="next">Next</button>
     </div>
     <div class="titlu_holder">
-        <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Denumire produs">
+        <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Produs">
         <input type="text" class="fields" id="cavitate" title="Cavitate" placeholder="Cavitate">
         <input type="text" class="fields" id="data" title="Data" placeholder="Data">
         <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora">
         <input type="text" class="fields" id="injectare" title="Injectare" placeholder="Injectare">
+        <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID">
+        <button id="get_id_btn" class="inactiv">ID spc</button>
         <button id="save" class="inactiv">Salveaza</button>
     </div>
     <div class="canvas_holder" class="ui-widget-content">

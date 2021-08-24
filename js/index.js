@@ -102,8 +102,6 @@ const text = ()=>{
                         let ids = titlu.length === 4 ?  ["produs", "cavitate", "data", "ora"] : ["produs", "data", "ora"];
 
                         
-
-
                         titlu.forEach( (el,i) =>{
                             let element = el.replace(/\s/g, "");
                             if(i==0){
@@ -114,8 +112,7 @@ const text = ()=>{
                                 document.querySelector(`#${ids[i]}`).value = element;
                             }                        
                         });
-                        
-                        
+                                                                        
                         titluNesetat = false;
                     }
                     
@@ -240,7 +237,7 @@ const text = ()=>{
                 });
 
                 x++;
-                if(x<pdfDoc.numPages){  $("#save").addClass("inactiv"); }else{  $("#save").removeClass("inactiv"); }
+                if(x<pdfDoc.numPages){  $("#save").addClass("inactiv"); $("#get_id_btn").addClass("inactiv"); }else{  $("#get_id_btn").removeClass("inactiv"); }
 
                 if(x<=pdfDoc.numPages){                  
                     myLoop(x);
@@ -442,3 +439,32 @@ upload.addEventListener('dragdrop', function (e) {
 upload.addEventListener('change', function (e) {
     onFile();
 }, false);
+
+// Fetch measurement id
+$("#get_id_btn").on("click", function(){
+    console.log('click')
+
+    const produs = $("#produs").val()
+    const cavitate = $("#cavitate").val()
+    const data = $("#data").val()
+    const ora = $("#ora").val()
+    
+    $.post('php/getId.php',{produs, cavitate, data, ora}, function(response){
+        if(response.status===200){
+            $("#id_spc").val(response.id);            
+            $("#save").removeClass("inactiv");            
+        }else{            
+            console.log(response)
+        }
+        
+    }, "json")
+}) 
+
+
+$("#id_spc").on("keyup", function(){
+    if( $(this).val() ){
+        $("#save").removeClass("inactiv");                    
+    }else{
+        $("#save").addClass("inactiv");            
+    }
+})

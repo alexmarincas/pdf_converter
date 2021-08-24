@@ -82,7 +82,7 @@
             color: #53a290;
         }
 
-        #save{
+        #save, #get_id_btn{
             position: absolute;
             right: 15px;
             top: 15px;
@@ -104,6 +104,10 @@
                 background-color:lightgrey;
                 pointer-events: none;
             }
+        }
+
+        #get_id_btn{
+            right: 115px;
         }
     }
 

@@ -106,7 +106,7 @@
   color: #53a290;
 }
 
-#container .titlu_holder #save {
+#container .titlu_holder #save, #container .titlu_holder #get_id_btn {
   position: absolute;
   right: 15px;
   top: 15px;
@@ -121,14 +121,18 @@
   transition: all .3s ease-in-out;
 }
 
-#container .titlu_holder #save:hover {
+#container .titlu_holder #save:hover, #container .titlu_holder #get_id_btn:hover {
   opacity: 1;
   cursor: pointer;
 }
 
-#container .titlu_holder #save.inactiv {
+#container .titlu_holder #save.inactiv, #container .titlu_holder #get_id_btn.inactiv {
   background-color: lightgrey;
   pointer-events: none;
+}
+
+#container .titlu_holder #get_id_btn {
+  right: 115px;
 }
 
 #container .canvas_holder {
