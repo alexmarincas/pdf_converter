@@ -10,6 +10,7 @@ $ora = mysqli_real_escape_string($connection, $_POST['ora']);
 $id = mysqli_real_escape_string($connection, $_POST['id']);
 $indProd = mysqli_real_escape_string($connection, $_POST['ind_prod']);
 $valoriMasurate = mysqli_real_escape_string($connection, $_POST['valoriMasurate']);
+$valoriSPC = mysqli_real_escape_string($connection, $_POST['valoriSPC']);
 
 if($produs){
     mysqli_query($connection, "UPDATE produse_trp SET Valori_metrologie='$indProd' WHERE Produs='$produs'");

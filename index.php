@@ -31,7 +31,6 @@
         <!-- <input type="text" class="fields" id="injectare" title="Injectare" placeholder="Injectare"> -->
         <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID">
         <button id="get_id_btn" class="inactiv">ID spc</button>
-        <button id="save" class="inactiv">Salveaza template</button>
         <button id="update" class="inactiv">Update SPC</button>
     </div>
     <div class="canvas_holder" class="ui-widget-content">

@@ -207,24 +207,20 @@ const text = ()=>{
                     // FINAL DE PAGINA
                     document.querySelector('#output').innerHTML += `<br>`;
 
-                    console.log(x, pdfDoc.numPages)
-
-                    if(x<pdfDoc.numPages){  
-                        $("#save").addClass("inactiv"); 
-                        $("#get_id_btn").addClass("inactiv"); 
-                    }else{ 
-                        $("#get_id_btn").removeClass("inactiv"); 
-                        $("#save").removeClass("inactiv"); 
-                    }
+                    // console.log(x, pdfDoc.numPages)
                     
                     if(x<pdfDoc.numPages){                  
+                        $("#update").addClass("inactiv"); 
+                        $("#get_id_btn").addClass("inactiv"); 
                         x++;
                         myLoop(x);
                     }else{
                         // DEBIFARE / BIFARE CASUTE
                         $.post("php/getIndex.php", {produs}, function(data){   
 
-                            console.log(data)
+                            $("#get_id_btn").removeClass("inactiv"); 
+
+                            // console.log(data)
                             
                             let ind = JSON.parse(data.ind_spc);
 
@@ -305,7 +301,8 @@ const showValues = () =>{
 
         let sirIndexSpc = [];
         let sirCoteClient = [];
-        let sirValoriMasurate = [];
+        let sirValoriSPC = [];
+        let sirUncheck = [];
         let sirValoriDeInregistrat = [];
 
         let checkbox = document.querySelectorAll(".checkbox");
@@ -322,7 +319,7 @@ const showValues = () =>{
 
         checkbox_client.forEach( (c, i) =>{
             if(c.checked){
-                sirValoriMasurate.push(valori[i].value);
+                sirValoriSPC.push(valori[i].value);
 
                 let t = `${i} : ${minim[i].innerHTML} / ${nominal[i].innerHTML} /${maxim[i].innerHTML}`;
                 sirCoteClient.push(t);
@@ -341,12 +338,15 @@ const showValues = () =>{
 
         checkbox.forEach( (c, i) =>{
             if(c.checked===false){
-                sirValoriDeInregistrat.push(i);
+                sirUncheck.push(i)
+            }else{
+                sirValoriDeInregistrat.push(valori[i].value);
             }
         });
 
-        let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirCoteClient)}|${JSON.stringify(sirValoriDeInregistrat)}|${JSON.stringify(sirIndexSpc)}`;
-        let valoriMasurate = JSON.stringify(sirValoriMasurate);
+        let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirCoteClient)}|${JSON.stringify(sirUncheck)}|${JSON.stringify(sirIndexSpc)}`;
+        let valoriMasurate = JSON.stringify(sirValoriDeInregistrat);
+        let valoriSPC = JSON.stringify(sirValoriSPC);
 
         let produs = $("#produs").val();
         let cav = $("#cavitate").val();
@@ -354,7 +354,7 @@ const showValues = () =>{
         let ora = $("#ora").val();
         let id = $("#id_spc").val();
 
-        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate}, function(response){
+        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC}, function(response){
             alertify.alert(response);
         });
 
@@ -366,7 +366,7 @@ const showValues = () =>{
 // Button events
 document.querySelector('#prev').addEventListener('click', showPrevPage);
 document.querySelector('#next').addEventListener('click', showNextPage);
-document.querySelector('#save').addEventListener('click', showValues);
+document.querySelector('#update').addEventListener('click', showValues);
 
 
 // UPLOAD FILE DRAG & DROP
