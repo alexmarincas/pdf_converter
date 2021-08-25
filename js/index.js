@@ -12,6 +12,10 @@ let pdfDoc = null,
     pageNumIsPending = null,
     controlor = "";
 
+let sirIndexSPC = []
+let sirIndexPDF = []
+let sirValori = []
+
 const canvas = document.querySelector('#pdf-render'),
       ctx = canvas.getContext('2d');
 
@@ -70,6 +74,7 @@ const eFaraMin = elem =>{
 
 let produs = "";
 
+
 // Get PDF content as text
 const text = ()=>{
     document.querySelector('#output').innerHTML = "";
@@ -84,9 +89,6 @@ const text = ()=>{
         
             pdfDoc.getPage(x).then(page => {
                 page.getTextContent().then(function (textContent) { 
-
-                    // console.log(textContent)
-                    // console.log("=============================================================================================================================")
     
                     // INCEPUT DE PAGINA
                     document.querySelector('#output').innerHTML += `<h3>Pagina ${(textItems.length+1)}</h3>`;
@@ -151,13 +153,15 @@ const text = ()=>{
                         if(conditie){
                             if(!isNaN(nrVal)){
 
-                                console.log(`%c${textContent.items[y-2].str} | ${val}`, `color: orange`);
+                                // console.log(`%c${textContent.items[y-2].str} | ${val}`, `color: orange`);
                                 
                                 let nominal = nrVal;
                                 let masurat =  isPortrait ? Number(textContent.items[y+2].str) : Number(textContent.items[y+2].str);
-                                let info_cav =  textContent.items[y-3].str;
+                                let info_cav =  textContent.items[y-6].str;
+
+                                // console.log(textContent.items[y-4].str, textContent.items[y-6].str, textContent.items[y-7].str, textContent.items[y-8].str)
         
-                                if(info_cav==" "){ info_cav = textContent.items[y-5].str; }
+                                // if(info_cav==" "){ info_cav = textContent.items[y-6].str; }
         
                                 let tolMin, tolMax = "";
         
@@ -181,8 +185,8 @@ const text = ()=>{
                                 let minim = (nominal+tolMin).toFixed(3);
                                 let maxim = (nominal+tolMax).toFixed(3);
 
-                                console.log(`%c${tolMin} | ${tolMax}`, `color: red`);
-                                console.log(`%c${minim} | ${maxim}`, `color: blue`);
+                                // console.log(`%c${tolMin} | ${tolMax}`, `color: red`);
+                                // console.log(`%c${minim} | ${maxim}`, `color: blue`);
         
                                 let clasa = (masurat>=minim && masurat<=maxim) ? "ok" : "nok";
         
@@ -203,51 +207,62 @@ const text = ()=>{
                     // FINAL DE PAGINA
                     document.querySelector('#output').innerHTML += `<br>`;
 
-                    // CALLBACK FUNCTION *                  
-                    if(x>pdfDoc.numPages){
-                            // DEBIFARE / BIFARE CASUTE
-                            $.post("php/getIndex.php", {produs}, function(data){   
-                                
-                                let ind = JSON.parse(data.ind_spc);
+                    console.log(x, pdfDoc.numPages)
 
-                                let contorSpc = 0;
-
-                                JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
-                                    console.log(el+" - "+i);
-                                    $(".checkbox").eq(el).prop("checked", false);
-                                });
-
-                                JSON.parse(data.check_fav).forEach( i =>{
-                                    $(".checkbox_client").eq(i).prop("checked", true);
-                                    
-                                    if(typeof ind[contorSpc] === 'undefined'){
-
-                                    }else{
-                                        $(".index_spc").eq(i).val(ind[contorSpc]);
-                                    }
-
-                                    contorSpc++;
-                                });
-
-                                
-
-                                
-                            }, "json");
+                    if(x<pdfDoc.numPages){  
+                        $("#save").addClass("inactiv"); 
+                        $("#get_id_btn").addClass("inactiv"); 
+                    }else{ 
+                        $("#get_id_btn").removeClass("inactiv"); 
+                        $("#save").removeClass("inactiv"); 
                     }
+                    
+                    if(x<pdfDoc.numPages){                  
+                        x++;
+                        myLoop(x);
+                    }else{
+                        // DEBIFARE / BIFARE CASUTE
+                        $.post("php/getIndex.php", {produs}, function(data){   
+
+                            console.log(data)
+                            
+                            let ind = JSON.parse(data.ind_spc);
+
+                            let contorSpc = 0;
+
+                            JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
+                                // console.log(el+" - "+i);
+                                $(".checkbox").eq(el).prop("checked", false);
+                            });
+
+                            JSON.parse(data.check_fav).forEach( i =>{
+                                $(".checkbox_client").eq(i).prop("checked", true);
+                                
+                                if(typeof ind[contorSpc] === 'undefined'){
+
+                                }else{
+                                    $(".index_spc").eq(i).val(ind[contorSpc]);
+                                }
+
+                                contorSpc++;
+                            });
+
+                            
+                        }, "json");
+                    }
+
                 });
 
-                x++;
-                if(x<pdfDoc.numPages){  $("#save").addClass("inactiv"); $("#get_id_btn").addClass("inactiv"); }else{  $("#get_id_btn").removeClass("inactiv"); }
+                
 
-                if(x<=pdfDoc.numPages){                  
-                    myLoop(x);
-                }
-
-            });  // END PDF PAGE MANIPULATION
+            }); // END PDF PAGE MANIPULATION
+              
 
     }
     
     myLoop(x);
+
+    
         
 };
 
@@ -333,13 +348,13 @@ const showValues = () =>{
         let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirCoteClient)}|${JSON.stringify(sirValoriDeInregistrat)}|${JSON.stringify(sirIndexSpc)}`;
         let valoriMasurate = JSON.stringify(sirValoriMasurate);
 
-        let produs = $("#titlu").val();
+        let produs = $("#produs").val();
         let cav = $("#cavitate").val();
         let data = $("#data").val();
         let ora = $("#ora").val();
-        let injectare = $("#injectare").val();
+        let id = $("#id_spc").val();
 
-        $.post("php/register.php", {produs, cav, data, ora, injectare, ind_prod, valoriMasurate}, function(response){
+        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate}, function(response){
             alertify.alert(response);
         });
 
@@ -442,7 +457,7 @@ upload.addEventListener('change', function (e) {
 
 // Fetch measurement id
 $("#get_id_btn").on("click", function(){
-    console.log('click')
+    // console.log('click')
 
     const produs = $("#produs").val()
     const cavitate = $("#cavitate").val()
@@ -452,7 +467,7 @@ $("#get_id_btn").on("click", function(){
     $.post('php/getId.php',{produs, cavitate, data, ora}, function(response){
         if(response.status===200){
             $("#id_spc").val(response.id);            
-            $("#save").removeClass("inactiv");            
+            $("#update").removeClass("inactiv");            
         }else{            
             console.log(response)
         }
@@ -463,8 +478,9 @@ $("#get_id_btn").on("click", function(){
 
 $("#id_spc").on("keyup", function(){
     if( $(this).val() ){
-        $("#save").removeClass("inactiv");                    
+        $("#update").removeClass("inactiv");                    
     }else{
-        $("#save").addClass("inactiv");            
+        $("#update").addClass("inactiv");            
     }
 })
+

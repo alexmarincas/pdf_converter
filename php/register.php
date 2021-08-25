@@ -7,7 +7,7 @@ $produs = mysqli_real_escape_string($connection, $_POST['produs']);
 $cav = mysqli_real_escape_string($connection, $_POST['cav']);
 $data = mysqli_real_escape_string($connection, $_POST['data']);
 $ora = mysqli_real_escape_string($connection, $_POST['ora']);
-$injectare = mysqli_real_escape_string($connection, $_POST['injectare']);
+$id = mysqli_real_escape_string($connection, $_POST['id']);
 $indProd = mysqli_real_escape_string($connection, $_POST['ind_prod']);
 $valoriMasurate = mysqli_real_escape_string($connection, $_POST['valoriMasurate']);
 
