@@ -176,6 +176,10 @@ const text = ()=>{
                                     if(eFaraMin(p)){
                                         tolMin = 0;
                                         tolMax = isPortrait ? Number(textContent.items[y+4].str) : Number(textContent.items[y+4].str);
+                                        if(tolMax === 0){
+                                            // console.log('hopa')
+                                            tolMax = isPortrait ? Number(textContent.items[y+6].str) : Number(textContent.items[y+6].str);
+                                        }
                                     }else{
                                         tolMin = isPortrait ? Number(textContent.items[y+4].str) : Number(textContent.items[y+4].str);
                                         tolMax = isPortrait ? Number(textContent.items[y+6].str) : Number(textContent.items[y+6].str);
@@ -215,10 +219,10 @@ const text = ()=>{
                         x++;
                         myLoop(x);
                     }else{
+                        $("#get_id_btn").removeClass("inactiv"); 
                         // DEBIFARE / BIFARE CASUTE
                         $.post("php/getIndex.php", {produs}, function(data){   
 
-                            $("#get_id_btn").removeClass("inactiv"); 
 
                             // console.log(data)
                             
@@ -344,9 +348,11 @@ const showValues = () =>{
             }
         });
 
-        let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirCoteClient)}|${JSON.stringify(sirUncheck)}|${JSON.stringify(sirIndexSpc)}`;
+        let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirUncheck)}|${JSON.stringify(sirIndexSpc)}`; // |
         let valoriMasurate = JSON.stringify(sirValoriDeInregistrat);
         let valoriSPC = JSON.stringify(sirValoriSPC);
+        let indSPC = JSON.stringify(sirIndexSpc);
+        let toleranteClient = JSON.stringify(sirCoteClient);
 
         let produs = $("#produs").val();
         let cav = $("#cavitate").val();
@@ -354,9 +360,17 @@ const showValues = () =>{
         let ora = $("#ora").val();
         let id = $("#id_spc").val();
 
-        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC}, function(response){
-            alertify.alert(response);
-        });
+        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC, indSPC, toleranteClient}, function(callback){
+            if( callback.status === 200 ){
+                alertify.alert(callback.response)
+            }else{
+                if(callback.status === 400){
+                    alertify.error(callback.error)
+                }else{
+                    console.log(callback)
+                }
+            }
+        }, 'json');
 
     }else{
         alertify.error("Nu exista valori de interpretat!");

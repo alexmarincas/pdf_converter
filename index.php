@@ -1,3 +1,6 @@
+<?php
+include_once("../redirect.php");
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>

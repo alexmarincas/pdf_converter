@@ -19,12 +19,11 @@ $rez = explode("|",$rez);
 
 if(sizeof($rez)){
     $check_fav = $rez[0];
-    $limite = $rez[1];
-    $uncheck_reg = $rez[2];
-    $ind_spc = $rez[3];
-    echo json_encode(array("check_fav"=>$check_fav, "limite"=>$limite, "uncheck_reg"=>$uncheck_reg, "ind_spc"=>$ind_spc));
+    $uncheck_reg = $rez[1];
+    $ind_spc = $rez[2];
+    echo json_encode(array("check_fav"=>$check_fav, "uncheck_reg"=>$uncheck_reg, "ind_spc"=>$ind_spc));
 }else{
-    echo json_encode(array("check_fav"=>"", "limite"=>"", "uncheck_reg"=>"", "ind_spc"=>""));
+    echo json_encode(array("check_fav"=>"", "uncheck_reg"=>"", "ind_spc"=>""));
 }
 
 ?>
