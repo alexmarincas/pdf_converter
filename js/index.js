@@ -109,11 +109,25 @@ const text = ()=>{
                             if(i==0){
                                 element = element.replace("_", "/");
                                 produs = element;
+                            }else{
+                                element = element.replace("_", ".")
+                                element = element.replace("/", ".")
+                                element = element.replace("-", ".")
+                                element = element.replace(",", ".")
                             }
                             if(typeof ids[i] !== 'undefined'){
                                 document.querySelector(`#${ids[i]}`).value = element;
                             }                        
                         });
+
+                        $("#metrolog").val( isPortrait ? textContent.items[2].str : textContent.items[1].str)
+                        $("#masina").val( isPortrait ? textContent.items[18].str : textContent.items[13].str)
+                        
+                        if( $("#masina").val() === " " ){                            
+                            $("#masina").val( textContent.items[19].str)
+                        }
+
+                        console.log($("#masina").val())
                                                                         
                         titluNesetat = false;
                     }
@@ -154,6 +168,7 @@ const text = ()=>{
                             if(!isNaN(nrVal)){
 
                                 // console.log(`%c${textContent.items[y-2].str} | ${val}`, `color: orange`);
+                                // console.log(`%c${nrVal} | ${y}`, `color: red`);
                                 
                                 let nominal = nrVal;
                                 let masurat =  isPortrait ? Number(textContent.items[y+2].str) : Number(textContent.items[y+2].str);
@@ -163,11 +178,26 @@ const text = ()=>{
         
                                 // if(info_cav==" "){ info_cav = textContent.items[y-6].str; }
         
-                                let tolMin, tolMax = "";
+                                let tolMin, tolMax = '';
         
                                 if(nominal){
-                                    tolMin = Number(textContent.items[y+4].str);
-                                    tolMax = Number(textContent.items[y+6].str);
+                                    if( $("#landscape").is(':checked') ){
+                                        if( textContent.items.length > textContent.items[y+6] && textContent.items.length > textContent.items[y+4] ){
+                                            tolMin = Number(textContent.items[y+4].str);
+                                            tolMax = Number(textContent.items[y+6].str);
+                                        }else{
+                                            tolMin, tolMax = 0
+                                        }
+                                    }else{
+                                        try{
+                                            tolMin = Number(textContent.items[y+4].str);
+                                            tolMax = Number(textContent.items[y+6].str);
+                                        }catch{
+                                            $(".loading").removeClass('visible');
+                                            alertify.alert("Selecteaza modul landscape si reincearca asa!")
+                                            return false
+                                        }
+                                    }
                                 }else{
                                     let p = isPortrait ? textContent.items[y-2].str.replace(/\s/g, "") : textContent.items[y-1].str.replace(/\s/g, "");
         
@@ -196,7 +226,7 @@ const text = ()=>{
         
                                 if(!isNaN(minim) && !isNaN(maxim) ){
                                     contor++;
-                                    document.querySelector('#output').innerHTML += `<div class='masuratoare'><span class='nrCrt tooltip' data-tooltip='Nr. crt.'>${contor}</span><input type='text' class='index_spc' placeholder='index spc'/><div class="custom_checkbox" title='De afisat clientului, respectiv de inregistrat in SPC'><input type='checkbox' id="id_${contor}" class='checkbox_client' /><label for="id_${contor}"><i class="fas fa-heart"></i></label></div><div class='custom_checkbox' title='Inregistrare valoare masurata in baza de date'><input type='checkbox' id="idn_${contor}" class='checkbox' checked/><label for="idn_${contor}"><i class="fas fa-check-square"></i></label></div><span class='bulina tooltip' data-tooltip='${info_cav}'></span><div class='info'><span class='nominal tooltip' data-tooltip='Nominal'>${nominal}</span> ( <span class='tooltip' data-tooltip='Tol -'>${tolMin}</span> / <span class='tooltip' data-tooltip='Tol +'>${tolMax}</span> )</div><div class='calcul'><span class='minim tooltip' data-tooltip='Minim'>${minim}</span><input type='text' class='valMasurata ${clasa}' value='${masurat}'><span class='tooltip maxim' data-tooltip='Maxim'>${maxim}</span></div></div>`;
+                                    document.querySelector('#output').innerHTML += `<div class='masuratoare'><span class='nrCrt tooltip' data-tooltip='Nr. crt.'>${contor}</span><input type='text' class='index_spc' placeholder='index spc'/><div class="custom_checkbox" title='De afisat clientului, respectiv de inregistrat in SPC'><input type='checkbox' id="id_${contor}" class='checkbox_client' /><label for="id_${contor}"><i class="fas fa-heart"></i></label></div><div class='custom_checkbox' title='Inregistrare valoare masurata in baza de date'><input type='checkbox' id="idn_${contor}" class='checkbox' checked/><label for="idn_${contor}"><i class="fas fa-check-square"></i></label></div><span class='bulina tooltip' data-tooltip='${info_cav}'></span><div class='info'><span class='nominal tooltip' data-tooltip='Nominal'>${nominal}</span> ( <span class='tolminim tooltip' data-tooltip='Tol -'>${tolMin}</span> / <span class='tolmaxim tooltip' data-tooltip='Tol +'>${tolMax}</span> )</div><div class='calcul'><span class='minim tooltip' data-tooltip='Minim'>${minim}</span><input type='text' class='valMasurata ${clasa}' value='${masurat}'><span class='tooltip maxim' data-tooltip='Maxim'>${maxim}</span></div></div>`;
                                 }
                                 // else{
                                 //     console.log("%cs-au amestecat mere cu pere", 'background: #222; color: #bada55');
@@ -220,6 +250,7 @@ const text = ()=>{
                         myLoop(x);
                     }else{
                         $("#get_id_btn").removeClass("inactiv"); 
+                        $(".loading").removeClass('visible');
                         // DEBIFARE / BIFARE CASUTE
                         $.post("php/getIndex.php", {produs}, function(data){   
 
@@ -314,8 +345,11 @@ const showValues = () =>{
         let index_spc = document.querySelectorAll(".index_spc");
         let valori = document.querySelectorAll(".valMasurata");
         let minim = document.querySelectorAll(".minim");
+        let tolminim = document.querySelectorAll(".tolminim");
         let nominal = document.querySelectorAll(".nominal");
+        let tolmaxim = document.querySelectorAll(".tolmaxim");
         let maxim = document.querySelectorAll(".maxim");
+        let descriere = document.querySelectorAll(".bulina");
 
         let indFav = [];
 
@@ -325,8 +359,8 @@ const showValues = () =>{
             if(c.checked){
                 sirValoriSPC.push(valori[i].value);
 
-                let t = `${i} : ${minim[i].innerHTML} / ${nominal[i].innerHTML} /${maxim[i].innerHTML}`;
-                sirCoteClient.push(t);
+                let t = `${nominal[i].innerText} +${tolmaxim[i].innerText} / ${tolminim[i].innerText}`;
+                sirCoteClient.push([minim[i].innerText, maxim[i].innerText, descriere[i].getAttribute('data-tooltip'), t]);
                 indFav.push(i);
                 
                 if( index_spc[i].value === "" ){
@@ -359,10 +393,38 @@ const showValues = () =>{
         let data = $("#data").val();
         let ora = $("#ora").val();
         let id = $("#id_spc").val();
+        let metrolog = $("#metrolog").val();
+        let masina = $("#masina").val();
 
-        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC, indSPC, toleranteClient}, function(callback){
+        if( produs === "" ){
+            alertify.error("Nu ati completat produsul!")
+            return false
+        }
+        if( cav === "" ){
+            alertify.error("Nu ati completat cavitatea!")
+            return false
+        }
+        if( data === "" ){
+            alertify.error("Nu ati completat data!")
+            return false
+        }
+        if( ora === "" ){
+            alertify.error("Nu ati completat ora!")
+            return false
+        }
+        if( id === "" ){
+            alertify.error("Nu ati completat id-ul!")
+            return false
+        }
+        if( metrolog === "" ){
+            alertify.error("Nu ati completat numele metrologului!")
+            return false
+        }
+
+        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC, indSPC, toleranteClient, metrolog, masina}, function(callback){
             if( callback.status === 200 ){
                 alertify.alert(callback.response)
+                console.log(callback.response)
             }else{
                 if(callback.status === 400){
                     alertify.error(callback.error)
@@ -412,13 +474,25 @@ function completeHandlerUpdate(event){
         
 }
 
-const text2 = () =>{
-    console.log("gata end end");
+const reset = () =>{
+    $("#produs").val("")
+    $("#cavitate").val("")
+    $("#data").val("")
+    $("#ora").val("")
+    $("#id_spc").val("")
+    $("#masina").val("")
+    $("#get_id_btn").addClass("inactiv")
+    $("#update").addClass("inactiv")
 };
+
+
 
 // GET DOCUMENT
 const getDocument = () =>{
-
+    
+    $(".loading").addClass('visible');
+    reset()
+    
     pdfjsLib.getDocument(url).promise.then(pdfDoc_ => {
         pdfDoc = pdfDoc_;
 

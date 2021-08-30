@@ -27,12 +27,14 @@ include_once("../redirect.php");
         <button id="next">Next</button>
     </div>
     <div class="titlu_holder">
-        <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Produs">
-        <input type="text" class="fields" id="cavitate" title="Cavitate" placeholder="Cavitate">
-        <input type="text" class="fields" id="data" title="Data" placeholder="Data">
-        <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora">
-        <!-- <input type="text" class="fields" id="injectare" title="Injectare" placeholder="Injectare"> -->
-        <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID">
+        <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Produs"/>
+        <input type="text" class="fields" id="cavitate" title="Cavitate.Sample" placeholder="Cavitate"/>
+        <input type="text" class="fields" id="data" title="Data" placeholder="Data"/>
+        <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora"/>
+        <input type="text" class="fields" id="metrolog" title="Metrolog" placeholder="Initiale/stampila metrolog"/>
+        <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID"/>
+        <input type="hidden" id="masina"/>
+        <input type="checkbox" title="Landscape?" id="landscape"/>
         <button id="get_id_btn" class="inactiv">ID spc</button>
         <button id="update" class="inactiv">Update SPC</button>
     </div>
@@ -46,6 +48,11 @@ include_once("../redirect.php");
     </div>
 </div>
 
+<div class='loading'>
+    <div class='mask'>
+        <div class='el'></div>
+    </div>
+</div>
 
     <script src="https://mozilla.github.io/pdf.js/build/pdf.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

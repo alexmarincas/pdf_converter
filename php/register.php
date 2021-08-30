@@ -2,26 +2,271 @@
 include_once "../../conn/conn.php";
 
 $connection = conectare_DB("thomas");
+$connectionSPC = conectare_DB("spc");
+$connectionSPCmetrologie = conectare_DB("spc_masuratori");
 
-$produs = mysqli_real_escape_string($connection, $_POST['produs']);
-$cav = mysqli_real_escape_string($connection, $_POST['cav']);
-$data = mysqli_real_escape_string($connection, $_POST['data']);
-$ora = mysqli_real_escape_string($connection, $_POST['ora']);
-$id = mysqli_real_escape_string($connection, $_POST['id']);
-$indProd = mysqli_real_escape_string($connection, $_POST['ind_prod']);
-$valoriMasurate = mysqli_real_escape_string($connection, $_POST['valoriMasurate']);
-$valoriSPC = mysqli_real_escape_string($connection, $_POST['valoriSPC']);
-$indSPC = mysqli_real_escape_string($connection, $_POST['indSPC']);
-$toleranteClient = mysqli_real_escape_string($connection, $_POST['toleranteClient']);
+// GET THE NAME BASED ON THE STAMP CODE
+function stampToName($stampile){
+    $pdo = conectare_DB('productie');
+    $arr = explode(",",str_replace(" ","",$stampile));
+    $persoane = array();
 
-if($produs){
-    mysqli_query($connection, "UPDATE produse_trp SET Valori_metrologie='$indProd' WHERE Produs='$produs'");
-    mysqli_close($connection);
-    // echo $indProd." - ".$valoriSPC;
-    echo json_encode(array("status"=>200, "response"=>"Actualizare realizata cu succes!"));
-}else{
-    echo json_encode(array("status"=>400, "error" => "Nu ati mentionat nici un produs!"));
+    for($x=0; $x<sizeof($arr); $x++){
+        $stmt = mysqli_query($pdo, "SELECT Nume, Prenume FROM personal WHERE Stampila = '$arr[$x]' OR Stampila_veche = '$arr[$x]' ");
+        if( mysqli_num_rows($stmt) ){                    
+            while($num = mysqli_fetch_assoc($stmt) ){
+                $numeIntreg = $num['Nume']." ".$num['Prenume'];
+                array_push($persoane, $numeIntreg);
+            }
+        }
+    }
+
+    mysqli_close($pdo);
+
+    if(sizeof($persoane)){
+        return implode(", ", $persoane);
+    }else{
+        return $stampile;
+    }
+
 }
 
+// GET PROJECT RESPONSIBLE INFO
+function getResponsibleEmail($produs){
+    $conn = conectare_DB('thomas');
+    $query = mysqli_query($conn, "SELECT Responsabil, Email FROM proiecte WHERE proiecte.Proiect = (SELECT Proiect FROM produse_trp WHERE Produs = '$produs')");
+    $responsabil = '';
+    $email = '';
+    while( $num = mysqli_fetch_assoc($query) ){
+        $responsabil = $num['Responsabil'];
+        $email = $num['Email'];
+    }
+
+    mysqli_close($conn);
+    
+    return array($responsabil, $email);
+}
+
+// CONVERT DATA
+function convertData($data){
+    $luni = array("Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie");
+    $arr = explode("-", $data);                            
+    return sizeof($arr) === 3 ? intval($arr[2])." ".$luni[ intval($arr[1])-1 ]." ".$arr[0] : $data;
+}
+
+function getLuna($data){
+    $sir = explode("-", $data);
+    $luni = array("Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie");
+    $m = intval($sir[1])-1;                       
+    return $luni[$m];
+}
+
+function formatData($data){    
+    $arr = explode(".", $data);                            
+    return sizeof($arr) === 3 ? $arr[2]."-".$arr[1]."-".$arr[0] : $data;
+}
+
+// VARIABLES
+$produs = mysqli_real_escape_string($connection, $_POST['produs']);
+$cavitate = mysqli_real_escape_string($connection, $_POST['cav']);
+$data_productiei = formatData( mysqli_real_escape_string($connection, $_POST['data']) );
+$ora = str_replace(".", ":", mysqli_real_escape_string($connection, $_POST['ora']) );
+$id = mysqli_real_escape_string($connection, $_POST['id']);
+$indProd = mysqli_real_escape_string($connection, $_POST['ind_prod']);
+$controlor_metrolog = mysqli_real_escape_string($connection, $_POST['metrolog']);
+$masina = $_POST['masina'];
+$luna = getLuna($data_productiei);
+
+if($masina === "QC_74 - DEA Performance"){
+    $masina = 1;
+}else{
+    $masina = 0;
+}
+
+if(stripos("&", $cavitate)===false){
+
+    if($produs && $id){
+
+        $valoriMasurate = $_POST['valoriMasurate'];
+        $valoriSPC = $_POST['valoriSPC'];
+        $indSPC = $_POST['indSPC'];
+        $toleranteClient = $_POST['toleranteClient'];
+
+        $query_produs = mysqli_query($connection, "SELECT Cavitati, Timp_masurare FROM produse_trp WHERE Produs='$produs'");
+
+        $cavitati = 0;
+        $timp_masurare = 0;
+
+        while($num = mysqli_fetch_assoc($query_produs)){
+            $cavitati = $num['Cavitati'];
+            $timp_masurare = $num['Timp_masurare'];
+        }
+
+        mysqli_query($connection, "UPDATE produse_trp SET Valori_metrologie='$indProd' WHERE Produs='$produs'");
+        mysqli_close($connection);
+        
+        // UPDATE SPC BASED ON THE ID
+        // READ 
+        $get_spc_string = mysqli_query($connectionSPC, "SELECT Masuratori, OperatorQA FROM masuratori WHERE id='$id'");
+        if( mysqli_num_rows( $get_spc_string ) ){
+            while($num = mysqli_fetch_assoc($get_spc_string)){
+                $masuratori = $num['Masuratori'];
+                $controlor = $num['OperatorQA'];
+            }
+
+            mysqli_close($connectionSPC);
+
+            // REPLACE VALUES
+            $sir_masuratori = explode("%", $masuratori);
+            $sirIndexSPC = json_decode($indSPC);
+            $sirValoriSPC = json_decode($valoriSPC);
+            $sirToleranteClient = json_decode($toleranteClient);
+
+            $sample = 0;
+            $mostra = 1;
+
+            $infoCav = str_ireplace("c", "", $cavitate);
+            
+            if(stripos("+", $infoCav)){
+                $cav = 1;
+            }else{
+                $cav = $infoCav;
+
+                if(stripos($infoCav, ".")){
+                    $sir = explode(".", $infoCav);
+                    $cav = $sir[0];
+                    $mostra = $sir[1];
+                    $sample = $mostra - 1;
+                }
+            }
+
+            $email_body = "";
+
+            for($x=0; $x<sizeof($sirIndexSPC); $x++){
+                $i = $sirIndexSPC[$x];
+                $linie = explode(",", $sir_masuratori[$i]);
+
+                $val = $sirValoriSPC[$x];
+                $linie[$sample] = $val;
+
+                $sir_masuratori[$i] = implode(",", $linie);
+
+                // COMPARE VALUES AGAINST LIMITS AND BUILD EMAIL BODY IF NECESSARY
+                $min = $sirToleranteClient[$x][0];
+                $max = $sirToleranteClient[$x][1];
+                $descriere = $sirToleranteClient[$x][2];
+                $tolerante = $sirToleranteClient[$x][3];
+
+                if($val > $max || $val < $min){
+                    $bigger = true;
+
+                    if($val > $max){
+                        $dif = $val - $max;
+                    }else{
+                        $dif = $min - $val;
+                        $bigger = false;
+                    }
+
+                    $email_body .= "<tr>";
+                        $email_body .= "<td class='big'>".$descriere."<br>".$tolerante."<br>( ".$min." ... ".$max." )</td>";
+                        $email_body .= "<td>".($mostra)."</td>";
+                        $email_body .= $bigger ? "<td></td>" : "<td class='red'>".$dif."</td>";
+                        $email_body .= "<td class='med'>".$val."</td>";
+                        $email_body .= $bigger ? "<td class='red'>".$dif."</td>" : "<td></td>";
+                    $email_body .= "</tr>";
+                }
+            }
+
+            $sir_masuratori_string = implode("%", $sir_masuratori);
+            
+            if(stripos($controlor, $controlor_metrolog) === false){
+                $controlor.=",".$controlor_metrolog;
+            }
+
+            // UPDATE
+            mysqli_query($connectionSPC, "UPDATE masuratori SET Masuratori='$sir_masuratori_string', OperatorQA='$controlor'  WHERE id='$id'");
+            mysqli_close($connectionSPC);
+
+            $nume_controlor_metrolog = stampToName( $controlor_metrolog );
+
+            // CHECK IF EMAIL BODY,  IF YES SEND EMAIL
+            if($email_body !== ""){
+                                
+                require '../../PHPMailer/src/ConnectSettings.php';
+                
+                $body  = "<style>.valori th{background-color:#dadada;width:80px;border:1px solid #999;} .valori .big{width:200px;} .valori td{border:1px solid #999; width:80px;} .valori .med{width:110px;} .red{background-color:#ff9090;}#logo{display:block;height:70px;width:auto;}";
+                $body .= ".info th{text-align: left;border:1px solid #999;padding:0 10px;background-color:#dadada;font-weight:normal;} .info td{padding-left:10px;margin-left:10px;text-align:left;border-bottom:1px solid #999;}";
+                $body .= "</style>";
+                
+                $body .= "<h3>Valori SPC ".$produs.",</h3>";
+                $body .= "<br>";
+                $body .= "<table class='valori' style='text-align: center'>";
+                $body .= "<tr><th class='big'>Operație</th><th class>Mostra</th><th>-</th><th class='med'>Valoare</th><th>+</th></tr>";
+                $body .= $email_body;
+                $body .= "</table>";
+                $body .= "<br>";
+                $body .= "<table class='info' style='text-align: center'>";
+                $body .= "<tr><th>Inginer metrolog</th><td>".$nume_controlor_metrolog."</td></tr>";                                                        
+                $body .= "<tr><th>Data</th><td>".convertData( date("Y-m-d") )."</td></tr>";
+                $body .= "<tr><th>ID înregistrare</th><td>".$id."</td></tr>";
+                $body .= "</table>";
+                
+                $body .= "<br><img src='cid:image_cid' id='logo' alt='Logo Thomas-Tontec'/>";
+                
+                $mail->setFrom("spc_metrologie@thomas-tontec.com", 'Alerte SPC metrologie');
+                
+                $mail->addCustomHeader('MIME-Version', '1.0');
+                $mail->addCustomHeader('Content-type', 'text/html');
+                
+                // list($email, $responsabil) = getResponsibleEmail($produs);
+                // $mail->addAddress($email, $responsabil);  
+
+                $mail->addAddress('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
+                // $mail->addCC('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
+                // $mail->addCC('Mirel.Seling@thomas-tontec.com', 'Mirel Seling');
+                
+                $mail->isHTML(true);
+                
+                $mail->Subject = "Cote NOK metrologie: ".$produs.", cavitatea ".$cav;
+                $mail->addEmbeddedImage('../../media/poze/thomas-tontec.png', 'image_cid');
+                $mail->Body = $body;
+                
+                if(!$mail->send()){
+                    $response = 'Actualizare realizata cu succes. Eroare la trimiterea email-ului...';
+                }else{
+                    $response = 'Actualizare realizata cu succes. Email trimis!';
+                }
+                
+            }else{
+                $response = 'Actualizare realizata cu succes!';
+            }
+            
+            // STORE ALL VALUES INTO spc_masuratori DB - a new column must be created
+            mysqli_query($connectionSPCmetrologie, "INSERT INTO masuratori (Produs, Cavitati, Data_productiei, Ora_injectarii, Luna, Stadiu, Masina, Pentru, Nume, Data_finalizarii, Timp_masurare, Program, SPC, Valori_masurate) VALUES ('$produs', '1', '$data_productiei', '$ora', '$luna', '2', '$masina', '0', '$nume_controlor_metrolog', NOW(), '$timp_masurare', '0', '1', '$valoriMasurate' )");
+
+            mysqli_close($connectionSPCmetrologie);
+
+            // $response = $luna;
+            // $response = $data_productiei;
+            // $response = $controlor;
+            // $response = $mostra;
+            // $response = $sample;
+            // $response = $infoCav;
+            // $response = $responsabil." - ".$email; 
+            // $response = $masuratori." - after - ".$sir_masuratori_string;
+
+            echo json_encode(array("status"=>200, "response"=>$response));
+            
+        }else{
+            mysqli_close($connectionSPC);
+            echo json_encode(array("status"=>400, "error" => "ID-ul mentionat nu exista!"));
+        }
+
+    }else{
+        echo json_encode(array("status"=>400, "error" => "Nu ati mentionat nici un produs!"));
+    }
+}else{
+    echo json_encode(array("status"=>400, "error" => "Raportul trebuie sa reprezinte o singura cavitate!"));
+}
 
 ?>
