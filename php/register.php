@@ -114,7 +114,7 @@ if(stripos("&", $cavitate)===false){
                 $controlor = $num['OperatorQA'];
             }
 
-            mysqli_close($connectionSPC);
+            // mysqli_close($connectionSPC);
 
             // REPLACE VALUES
             $sir_masuratori = explode("%", $masuratori);
