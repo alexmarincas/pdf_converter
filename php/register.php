@@ -170,9 +170,9 @@ if(stripos("&", $cavitate)===false){
                     $email_body .= "<tr>";
                         $email_body .= "<td class='big'>".$descriere."<br>".$tolerante."<br>( ".$min." ... ".$max." )</td>";
                         $email_body .= "<td>".($mostra)."</td>";
-                        $email_body .= $bigger ? "<td></td>" : "<td class='red'>".$dif."</td>";
+                        $email_body .= $bigger ? "<td></td>" : "<td class='red'>".round($dif, 3)."</td>";
                         $email_body .= "<td class='med'>".$val."</td>";
-                        $email_body .= $bigger ? "<td class='red'>".$dif."</td>" : "<td></td>";
+                        $email_body .= $bigger ? "<td class='red'>".round($dif, 3)."</td>" : "<td></td>";
                     $email_body .= "</tr>";
                 }
             }
@@ -222,6 +222,7 @@ if(stripos("&", $cavitate)===false){
                 // $mail->addAddress($email, $responsabil);  
 
                 $mail->addAddress('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
+                $mail->addCC('tudor.petrescu@thomas-tontec.com', 'Tudor Petrescu');
                 // $mail->addCC('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
                 // $mail->addCC('Mirel.Seling@thomas-tontec.com', 'Mirel Seling');
                 

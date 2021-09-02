@@ -34,7 +34,7 @@ include_once("../redirect.php");
         <input type="text" class="fields" id="metrolog" title="Metrolog" placeholder="Initiale/stampila metrolog"/>
         <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID"/>
         <input type="hidden" id="masina"/>
-        <input type="checkbox" title="Landscape?" id="landscape"/>
+        <!-- <input type="checkbox" title="Landscape?" id="landscape"/> -->
         <button id="get_id_btn" class="inactiv">ID spc</button>
         <button id="update" class="inactiv">Update SPC</button>
     </div>

@@ -170,7 +170,7 @@ const text = ()=>{
                             if(!isNaN(nrVal)){                                
 
                                 // console.log(`%c${textContent.items[y-2].str} | ${val}`, `color: orange`);
-                                // console.log(`%c${nrVal} | ${y}`, `color: green`);
+                                console.log(`%c${nrVal} | ${y}`, `color: green`);
                                 
                                 let nominal = nrVal;
                                 let masurat =  isPortrait ? Number(textContent.items[y+2].str) : Number(textContent.items[y+2].str);
@@ -178,101 +178,118 @@ const text = ()=>{
 
                                 // console.log(textContent.items[y-4].str, textContent.items[y-6].str, textContent.items[y-7].str, textContent.items[y-8].str)
         
+        
                                 let tolMin, tolMax = '';
         
-                                try{
+                                if(nominal){
+                                    if( $("#landscape").is(':checked') ){
+                                        if( textContent.items.length > textContent.items[y+6] && textContent.items.length > textContent.items[y+4] ){
+                                            tolMin = textContent.items[y+4].str;
+                                            tolMax = textContent.items[y+6].str;
 
-                                    let p = textContent.items[y-2].str.replace(/\s/g, "")
+                                            if(tolMin === " " || tolMin === ""){
+                                                tolMin = textContent.items[y+3].str
+                                            }
 
-                                    // console.log("nominal 0 => pag: "+x+" : "+p+", linia = "+y, isPortrait);
+                                            if(tolMax === " " || tolMax === ""){
+                                                tolMax = textContent.items[y+5].str
+                                            }
+
+                                            tolMin = Number(tolMin)
+                                            tolMax = Number(tolMax)
+                                        }else{
+                                            tolMin, tolMax = 0
+                                        }
+                                    }else{
+                                        try{
+                                            tolMin = textContent.items[y+4].str;
+                                            tolMax = textContent.items[y+6].str;
+
+                                            if(tolMin === " " || tolMin === ""){
+                                                tolMin = textContent.items[y+3].str
+                                            }
+
+                                            if(tolMax === " " || tolMax === ""){
+                                                tolMax = textContent.items[y+5].str
+                                            }
+
+                                            tolMin = Number(tolMin)
+                                            tolMax = Number(tolMax)
+                                        }catch{
+                                            tolMin, tolMax = 0
+
+                                            $("#get_id_btn").removeClass("inactiv"); 
+                                            $(".loading").removeClass('visible');
+                                            // DEBIFARE / BIFARE CASUTE
+                                            $.post("php/getIndex.php", {produs}, function(data){   
+
+
+                                                // console.log(data)
+                                                
+                                                let ind = JSON.parse(data.ind_spc);
+
+                                                let contorSpc = 0;
+
+                                                JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
+                                                    // console.log(el+" - "+i);
+                                                    $(".checkbox").eq(el).prop("checked", false);
+                                                });
+
+                                                JSON.parse(data.check_fav).forEach( i =>{
+                                                    $(".checkbox_client").eq(i).prop("checked", true);
+                                                    
+                                                    if(typeof ind[contorSpc] === 'undefined'){
+
+                                                    }else{
+                                                        $(".index_spc").eq(i).val(ind[contorSpc]);
+                                                    }
+
+                                                    contorSpc++;
+                                                });
+
+                                                $(".loading").removeClass('visible');
+                                                alertify.alert("Selecteaza modul landscape si reincearca asa!")
+                                                return false
+                                                
+                                            }, "json");
+                                        }
+                                    }
+                                }else{
+                                    let p = isPortrait ? textContent.items[y-2].str.replace(/\s/g, "") : textContent.items[y-1].str.replace(/\s/g, "");
+        
+                                    // console.log("nominal 0 => pag: "+x+" : "+p+", linia = "+y);
         
                                     if(eFaraMin(p)){
                                         tolMin = 0;
-                                        tolMax = Number(textContent.items[y+4].str)
+                                        tolMax = isPortrait ? Number(textContent.items[y+4].str) : Number(textContent.items[y+4].str);
                                         if(tolMax === 0){
                                             // console.log('hopa')
-                                            tolMax = Number(textContent.items[y+6].str)
-                                        }
-
-                                        if(tolMax === 0){
-                                            // console.log('hopa')
-                                            tolMax = textContent.items[y+3].str
+                                            tolMax = isPortrait ? Number(textContent.items[y+6].str) : Number(textContent.items[y+6].str);
                                         }
                                     }else{
-                                        tolMin = textContent.items[y+4].str
-                                        tolMax = textContent.items[y+6].str
-
-                                        if(tolMin === " " || tolMin === ""){
-                                            tolMin = textContent.items[y+3].str
-                                        }
-    
-                                        if(tolMax === " " || tolMax === ""){
-                                            tolMax = textContent.items[y+5].str
-                                        }
+                                        tolMin = isPortrait ? Number(textContent.items[y+4].str) : Number(textContent.items[y+4].str);
+                                        tolMax = isPortrait ? Number(textContent.items[y+6].str) : Number(textContent.items[y+6].str);
                                     }
-                                    
-                                    tolMin = Number(tolMin)
-                                    tolMax = Number(tolMax)
-
-                                    let minim = (nominal+tolMin).toFixed(3);
-                                    let maxim = (nominal+tolMax).toFixed(3);
-
-                                    // console.log(`%c${tolMin} | ${tolMax}`, `color: red`);
-                                    // console.log(`%c${minim} | ${maxim}`, `color: blue`);
-            
-                                    let clasa = (masurat>=minim && masurat<=maxim) ? "ok" : "nok";
-            
-                                    if(!isNaN(minim) && !isNaN(maxim) ){
-                                        contor++;
-                                        document.querySelector('#output').innerHTML += `<div class='masuratoare'><span class='nrCrt tooltip' data-tooltip='Nr. crt.'>${contor}</span><input type='text' class='index_spc' placeholder='index spc'/><div class="custom_checkbox" title='De afisat clientului, respectiv de inregistrat in SPC'><input type='checkbox' id="id_${contor}" class='checkbox_client' /><label for="id_${contor}"><i class="fas fa-heart"></i></label></div><div class='custom_checkbox' title='Inregistrare valoare masurata in baza de date'><input type='checkbox' id="idn_${contor}" class='checkbox' checked/><label for="idn_${contor}"><i class="fas fa-check-square"></i></label></div><span class='bulina tooltip' data-tooltip='${info_cav}'></span><div class='info'><span class='nominal tooltip' data-tooltip='Nominal'>${nominal}</span> ( <span class='tolminim tooltip' data-tooltip='Tol -'>${tolMin}</span> / <span class='tolmaxim tooltip' data-tooltip='Tol +'>${tolMax}</span> )</div><div class='calcul'><span class='minim tooltip' data-tooltip='Minim'>${minim}</span><input type='text' class='valMasurata ${clasa}' value='${masurat}'><span class='tooltip maxim' data-tooltip='Maxim'>${maxim}</span></div></div>`;
-                                    }
-                                    // else{
-                                    //     console.log("%cs-au amestecat mere cu pere", 'background: #222; color: #bada55');
-                                    // }
-
-                                    // y += isPortrait ? 5 : 5;
-                                    y+=10
-
-                                }catch{
-                                    // $("#get_id_btn").removeClass("inactiv"); 
-                                    // $(".loading").removeClass('visible');
-                                    // DEBIFARE / BIFARE CASUTE
-                                    // $.post("php/getIndex.php", {produs}, function(data){   
-
-
-                                    //     // console.log(data)
-                                        
-                                    //     let ind = JSON.parse(data.ind_spc);
-
-                                    //     let contorSpc = 0;
-
-                                    //     JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
-                                    //         // console.log(el+" - "+i);
-                                    //         $(".checkbox").eq(el).prop("checked", false);
-                                    //     });
-
-                                    //     JSON.parse(data.check_fav).forEach( i =>{
-                                    //         $(".checkbox_client").eq(i).prop("checked", true);
-                                            
-                                    //         if(typeof ind[contorSpc] === 'undefined'){
-
-                                    //         }else{
-                                    //             $(".index_spc").eq(i).val(ind[contorSpc]);
-                                    //         }
-
-                                    //         contorSpc++;
-                                    //     });
-
-                                    //     $(".loading").removeClass('visible');
-                                    //     alertify.alert("Selecteaza modul landscape si reincearca asa!")
-                                    //     return false
-                                        
-                                    // }, "json");
                                 }
-                                    
-                                                                    
         
-                                
+                                let minim = (nominal+tolMin).toFixed(3);
+                                let maxim = (nominal+tolMax).toFixed(3);
+
+                                // console.log(`%c${tolMin} | ${tolMax}`, `color: red`);
+                                // console.log(`%c${minim} | ${maxim}`, `color: blue`);
+        
+                                let clasa = (masurat>=minim && masurat<=maxim) ? "ok" : "nok";
+        
+                                if(!isNaN(minim) && !isNaN(maxim) ){
+                                    contor++;
+                                    document.querySelector('#output').innerHTML += `<div class='masuratoare'><span class='nrCrt tooltip' data-tooltip='Nr. crt.'>${contor}</span><input type='text' class='index_spc' placeholder='index spc'/><div class="custom_checkbox" title='De afisat clientului, respectiv de inregistrat in SPC'><input type='checkbox' id="id_${contor}" class='checkbox_client' /><label for="id_${contor}"><i class="fas fa-heart"></i></label></div><div class='custom_checkbox' title='Inregistrare valoare masurata in baza de date'><input type='checkbox' id="idn_${contor}" class='checkbox' checked/><label for="idn_${contor}"><i class="fas fa-check-square"></i></label></div><span class='bulina tooltip' data-tooltip='${info_cav}'></span><div class='info'><span class='nominal tooltip' data-tooltip='Nominal'>${nominal}</span> ( <span class='tolminim tooltip' data-tooltip='Tol -'>${tolMin}</span> / <span class='tolmaxim tooltip' data-tooltip='Tol +'>${tolMax}</span> )</div><div class='calcul'><span class='minim tooltip' data-tooltip='Minim'>${minim}</span><input type='text' class='valMasurata ${clasa}' value='${masurat}'><span class='tooltip maxim' data-tooltip='Maxim'>${maxim}</span></div></div>`;
+                                }
+                                // else{
+                                //     console.log("%cs-au amestecat mere cu pere", 'background: #222; color: #bada55');
+                                // }
+
+                                // y += isPortrait ? 5 : 5;
+                                y+=10
                             }
                         }
                     }
