@@ -433,7 +433,11 @@ const showValues = () =>{
             return false
         }
 
+        $(".loading").addClass('visible');
+
         $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC, indSPC, toleranteClient, metrolog, masina, obs}, function(callback){
+            $(".loading").removeClass('visible');
+
             if( callback.status === 200 ){
                 alertify.alert(callback.response)
                 console.log(callback.response)
