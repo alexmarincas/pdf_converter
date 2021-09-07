@@ -43,7 +43,7 @@ include_once("../redirect.php");
                 <input type="text" class="fields" id="cavitate" title="Cavitate.Sample" placeholder="Cavitate"/>
                 <input type="text" class="fields" id="data" title="Data" placeholder="Data"/>
                 <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora"/>
-                <input type="text" class="fields" id="metrolog" title="Metrolog" placeholder="Initiale/stampila metrolog"/>
+                <input type="text" class="fields" id="metrolog" title="Metrolog" placeholder="Initiale/stampila"/>
                 <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID"/>
                 <input type="hidden" id="masina"/>
             </div>

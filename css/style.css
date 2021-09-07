@@ -152,6 +152,30 @@
   border-bottom: 1px solid lightblue;
 }
 
+#container .wrap-content .wrap-meniu .titlu_holder input[type='text']::-webkit-input-placeholder {
+  color: #cccccc;
+  font-weight: normal;
+  font-style: italic;
+}
+
+#container .wrap-content .wrap-meniu .titlu_holder input[type='text']:-ms-input-placeholder {
+  color: #cccccc;
+  font-weight: normal;
+  font-style: italic;
+}
+
+#container .wrap-content .wrap-meniu .titlu_holder input[type='text']::-ms-input-placeholder {
+  color: #cccccc;
+  font-weight: normal;
+  font-style: italic;
+}
+
+#container .wrap-content .wrap-meniu .titlu_holder input[type='text']::placeholder {
+  color: #cccccc;
+  font-weight: normal;
+  font-style: italic;
+}
+
 #container .wrap-content .wrap-meniu .titlu_holder #titlu {
   color: #53a290;
 }
