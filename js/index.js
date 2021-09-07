@@ -236,38 +236,8 @@ const text = ()=>{
                                 }catch{
                                     // $("#get_id_btn").removeClass("inactiv"); 
                                     // $(".loading").removeClass('visible');
-                                    // DEBIFARE / BIFARE CASUTE
-                                    // $.post("php/getIndex.php", {produs}, function(data){   
-
-
-                                    //     // console.log(data)
-                                        
-                                    //     let ind = JSON.parse(data.ind_spc);
-
-                                    //     let contorSpc = 0;
-
-                                    //     JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
-                                    //         // console.log(el+" - "+i);
-                                    //         $(".checkbox").eq(el).prop("checked", false);
-                                    //     });
-
-                                    //     JSON.parse(data.check_fav).forEach( i =>{
-                                    //         $(".checkbox_client").eq(i).prop("checked", true);
-                                            
-                                    //         if(typeof ind[contorSpc] === 'undefined'){
-
-                                    //         }else{
-                                    //             $(".index_spc").eq(i).val(ind[contorSpc]);
-                                    //         }
-
-                                    //         contorSpc++;
-                                    //     });
-
-                                    //     $(".loading").removeClass('visible');
-                                    //     alertify.alert("Selecteaza modul landscape si reincearca asa!")
-                                    //     return false
-                                        
-                                    // }, "json");
+                                    // console.log('hopa')
+                                    // return false
                                 }
                                     
                                                                     
@@ -283,12 +253,14 @@ const text = ()=>{
                     // console.log(x, pdfDoc.numPages)
                     
                     if(x<pdfDoc.numPages){                  
-                        $("#update").addClass("inactiv"); 
                         $("#get_id_btn").addClass("inactiv"); 
+                        $("#save").addClass("inactiv"); 
+                        $("#update").addClass("inactiv"); 
                         x++;
                         myLoop(x);
                     }else{
                         $("#get_id_btn").removeClass("inactiv"); 
+                        $("#save").removeClass("inactiv"); 
                         $(".loading").removeClass('visible');
                         // DEBIFARE / BIFARE CASUTE
                         $.post("php/getIndex.php", {produs}, function(data){   
@@ -392,7 +364,7 @@ const showValues = () =>{
 
         let indFav = [];
 
-        check_index = true;
+        let check_index = true;
 
         checkbox_client.forEach( (c, i) =>{
             if(c.checked){
@@ -432,8 +404,9 @@ const showValues = () =>{
         let data = $("#data").val();
         let ora = $("#ora").val();
         let id = $("#id_spc").val();
-        let metrolog = $("#metrolog").val();
+        let metrolog = $("#metrolog").val().replace(/ /g,"");
         let masina = $("#masina").val();
+        let obs = $("#observatii").val();
 
         if( produs === "" ){
             alertify.error("Nu ati completat produsul!")
@@ -455,12 +428,12 @@ const showValues = () =>{
             alertify.error("Nu ati completat id-ul!")
             return false
         }
-        if( metrolog === "" ){
+        if( metrolog === "" || metrolog.length < 2){
             alertify.error("Nu ati completat numele metrologului!")
             return false
         }
 
-        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC, indSPC, toleranteClient, metrolog, masina}, function(callback){
+        $.post("php/register.php", {produs, cav, data, ora, id, ind_prod, valoriMasurate, valoriSPC, indSPC, toleranteClient, metrolog, masina, obs}, function(callback){
             if( callback.status === 200 ){
                 alertify.alert(callback.response)
                 console.log(callback.response)
@@ -602,7 +575,6 @@ $("#get_id_btn").on("click", function(){
     }, "json")
 }) 
 
-
 $("#id_spc").on("keyup", function(){
     if( $(this).val() ){
         $("#update").removeClass("inactiv");                    
@@ -611,3 +583,49 @@ $("#id_spc").on("keyup", function(){
     }
 })
 
+// SAVE TEMPLATE
+$("#save").on("click", function(){
+    // console.log('click')
+
+    let sirIndexSpc = [];
+    let indFav = [];
+    let sirUncheck = [];
+
+    const produs = $("#produs").val()
+    const checkbox = document.querySelectorAll(".checkbox");
+    const checkbox_client = document.querySelectorAll(".checkbox_client");
+    const index_spc = document.querySelectorAll(".index_spc");
+
+    let check_index = true;
+
+    checkbox_client.forEach( (c, i) =>{
+        if(c.checked){
+            indFav.push(i);                
+            if( index_spc[i].value === "" ){
+                check_index = false;
+            }else{                    
+                sirIndexSpc.push(index_spc[i].value);
+            }                
+        }
+    });
+
+    if(!produs){ alertify.error("Nu ai completat produsul"); return false; }
+    if(!check_index){ alertify.error("Nu ai completat indecsii necesari cotelor relevante SPC"); return false; }
+
+    checkbox.forEach( (c, i) =>{
+        if(c.checked===false){
+            sirUncheck.push(i)
+        }
+    });
+
+
+    let ind_prod = `${JSON.stringify(indFav)}|${JSON.stringify(sirUncheck)}|${JSON.stringify(sirIndexSpc)}`;
+    
+    $.post('php/saveTemplate.php',{produs, ind_prod}, function(response){
+        if(response.status===200){
+            alertify.success(response.msg)        
+        }else{
+            alertify.error(response.msg)
+        }
+    }, "json")
+}) 

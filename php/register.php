@@ -74,6 +74,7 @@ $ora = str_replace(".", ":", mysqli_real_escape_string($connection, $_POST['ora'
 $id = mysqli_real_escape_string($connection, $_POST['id']);
 $indProd = mysqli_real_escape_string($connection, $_POST['ind_prod']);
 $controlor_metrolog = mysqli_real_escape_string($connection, $_POST['metrolog']);
+$obs = mysqli_real_escape_string($connection, $_POST['obs']);
 $masina = $_POST['masina'];
 $luna = getLuna($data_productiei);
 
@@ -107,14 +108,13 @@ if(stripos("&", $cavitate)===false){
         
         // UPDATE SPC BASED ON THE ID
         // READ 
-        $get_spc_string = mysqli_query($connectionSPC, "SELECT Masuratori, OperatorQA FROM masuratori WHERE id='$id'");
+        $get_spc_string = mysqli_query($connectionSPC, "SELECT Masuratori, OperatorQA, ObservatiiQA FROM masuratori WHERE id='$id'");
         if( mysqli_num_rows( $get_spc_string ) ){
             while($num = mysqli_fetch_assoc($get_spc_string)){
                 $masuratori = $num['Masuratori'];
                 $controlor = $num['OperatorQA'];
+                $observatiiQA = $num['ObservatiiQA'];
             }
-
-            // mysqli_close($connectionSPC);
 
             // REPLACE VALUES
             $sir_masuratori = explode("%", $masuratori);
@@ -183,8 +183,19 @@ if(stripos("&", $cavitate)===false){
                 $controlor.=",".$controlor_metrolog;
             }
 
+            if($obs){
+                if($observatiiQA){
+                    $observatiiQA.="; ".$obs;
+                }else{
+                    $observatiiQA = $obs;
+                }
+            }
+
             // UPDATE
-            mysqli_query($connectionSPC, "UPDATE masuratori SET Masuratori='$sir_masuratori_string', OperatorQA='$controlor'  WHERE id='$id'");
+            mysqli_query($connectionSPC, "UPDATE masuratori SET Masuratori='$sir_masuratori_string', OperatorQA='$controlor', ObservatiiQA='$observatiiQA' WHERE id='$id'");
+            if($email_body !== ""){
+                mysqli_query($connectionSPC, "UPDATE masuratori SET NOK='1' WHERE id='$id'");
+            }
             mysqli_close($connectionSPC);
 
             $nume_controlor_metrolog = stampToName( $controlor_metrolog );
@@ -207,7 +218,11 @@ if(stripos("&", $cavitate)===false){
                 $body .= "<br>";
                 $body .= "<table class='info' style='text-align: center'>";
                 $body .= "<tr><th>Inginer metrolog</th><td>".$nume_controlor_metrolog."</td></tr>";                                                        
-                $body .= "<tr><th>Data</th><td>".convertData( date("Y-m-d") )."</td></tr>";
+                $body .= "<tr><th>Data injectării</th><td>".convertData( $data_productiei )."</td></tr>";
+                $body .= "<tr><th>Ora injectării</th><td>".$ora."</td></tr>";
+                if($obs){
+                    $body .= "<tr><th>Observații</th><td>".$obs."</td></tr>";
+                }
                 $body .= "<tr><th>ID înregistrare</th><td>".$id."</td></tr>";
                 $body .= "</table>";
                 
@@ -218,13 +233,16 @@ if(stripos("&", $cavitate)===false){
                 $mail->addCustomHeader('MIME-Version', '1.0');
                 $mail->addCustomHeader('Content-type', 'text/html');
                 
-                // list($email, $responsabil) = getResponsibleEmail($produs);
-                // $mail->addAddress($email, $responsabil);  
+                $infoEmail = getResponsibleEmail($produs);
+                if($infoEmail[1]){
+                    $mail->addAddress($infoEmail[1], $infoEmail[0]);
+                    $mail->addCC('Mirel.Seling@thomas-tontec.com', 'Mirel Seling');
+                }else{
+                    $mail->addAddress('Mirel.Seling@thomas-tontec.com', 'Mirel Seling');
+                }
 
-                $mail->addAddress('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
                 $mail->addCC('tudor.petrescu@thomas-tontec.com', 'Tudor Petrescu');
-                // $mail->addCC('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
-                // $mail->addCC('Mirel.Seling@thomas-tontec.com', 'Mirel Seling');
+                $mail->addCC('alex.marincas@thomas-tontec.com', 'Alexandru Marincas');
                 
                 $mail->isHTML(true);
                 

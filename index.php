@@ -21,27 +21,54 @@ include_once("../redirect.php");
 <body>
 
 <div id="container">
+    
+    <!-- LEFT SIDE -->
+
     <div id="meniu">
         <button id="prev">Prev</button>
         <p><span id="page-num"></span> / <span id="pages"></span></p>
         <button id="next">Next</button>
     </div>
-    <div class="titlu_holder">
-        <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Produs"/>
-        <input type="text" class="fields" id="cavitate" title="Cavitate.Sample" placeholder="Cavitate"/>
-        <input type="text" class="fields" id="data" title="Data" placeholder="Data"/>
-        <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora"/>
-        <input type="text" class="fields" id="metrolog" title="Metrolog" placeholder="Initiale/stampila metrolog"/>
-        <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID"/>
-        <input type="hidden" id="masina"/>
-        <!-- <input type="checkbox" title="Landscape?" id="landscape"/> -->
-        <button id="get_id_btn" class="inactiv">ID spc</button>
-        <button id="update" class="inactiv">Update SPC</button>
-    </div>
+    
     <div class="canvas_holder" class="ui-widget-content">
         <canvas id="pdf-render"></canvas>
-    </div>    
-    <div id="output" class="ui-widget-content"></div>
+    </div>  
+
+    <!-- RIGHT SIDE -->
+
+    <div class="wrap-content">
+        <div class="wrap-meniu">
+            <div class="titlu_holder">
+                <input type="text" class="fields" id="produs" title="Denumire produs" placeholder="Produs"/>
+                <input type="text" class="fields" id="cavitate" title="Cavitate.Sample" placeholder="Cavitate"/>
+                <input type="text" class="fields" id="data" title="Data" placeholder="Data"/>
+                <input type="text" class="fields" id="ora" title="Ora" placeholder="Ora"/>
+                <input type="text" class="fields" id="metrolog" title="Metrolog" placeholder="Initiale/stampila metrolog"/>
+                <input type="text" class="fields" id="id_spc" title="ID SPC" placeholder="ID"/>
+                <input type="hidden" id="masina"/>
+            </div>
+
+            <button id="get_id_btn" class="inactiv">ID spc</button>
+
+            <textarea id="observatii" placeholder='Observații'></textarea>
+
+            <div class="sugestii">
+                <div class="sugestie"></div>
+                <div class="sugestie"></div>
+                <div class="sugestie"></div>
+                <div class="sugestie"></div>
+            </div>
+
+            <div class="btn-holder">
+                <button id="save" class="inactiv">Save template</button>
+                <button id="update" class="inactiv">Update SPC</button>
+            </div>
+
+        </div>
+    
+        <div id="output" class="ui-widget-content"></div>
+    </div>
+
     <div class="area">
         <i class="fas fa-upload"></i>
         <input type="file" id="upload" />
