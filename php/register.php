@@ -142,9 +142,21 @@ if(stripos("&", $cavitate)===false){
 
             $email_body = "";
 
+            // CHECK IF IN THE REGISTERD ARRAY OF VALUES EXISTS THE LARGEST INDEX WHICH MUST BE UPDATED, OTHERWISE INCREASE THE LENGTH OF THE ARRAY
+            $greatestInd = max($sirIndexSPC);
+
+            if($greatestInd > sizeof($sir_masuratori)-1){
+                $a = $greatestInd - sizeof($sir_masuratori);
+                for($x=0; $x<$a; $x++){
+                    array_push($sir_masuratori, "N/A,N/A,N/A,N/A,N/A");
+                }
+            }
+
             for($x=0; $x<sizeof($sirIndexSPC); $x++){
                 $i = $sirIndexSPC[$x];
+                
                 $linie = explode(",", $sir_masuratori[$i]);
+                
 
                 $val = $sirValoriSPC[$x];
                 $linie[$sample] = $val;
