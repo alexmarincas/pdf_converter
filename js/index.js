@@ -372,7 +372,7 @@ const showValues = () =>{
             if(c.checked){
                 sirValoriSPC.push(valori[i].value);
 
-                if( valori[i].classList.includes("nok") ){
+                if( valori[i].classList.value.includes("nok") ){
                     nok = true
                 }
 
