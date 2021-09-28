@@ -163,10 +163,19 @@
                     font-style: italic;
                 }
             }
-            
-            .sugestii{
-                grid-row: 3/4;
-                grid-column: 1/2;
+
+            .pulse{
+                animation: pulse .5s infinite;
+            }
+
+            @keyframes pulse{
+                0%{
+                    background-color: #f7d5d5;
+                }
+
+                50%{
+                    background-color: #ff9595;
+                }
             }
 
             .btn-holder{

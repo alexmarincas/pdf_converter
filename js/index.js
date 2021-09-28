@@ -366,9 +366,15 @@ const showValues = () =>{
 
         let check_index = true;
 
+        let nok = false
+
         checkbox_client.forEach( (c, i) =>{
             if(c.checked){
                 sirValoriSPC.push(valori[i].value);
+
+                if( valori[i].classList.includes("nok") ){
+                    nok = true
+                }
 
                 let t = `${nominal[i].innerText} +${tolmaxim[i].innerText} / ${tolminim[i].innerText}`;
                 sirCoteClient.push([minim[i].innerText, maxim[i].innerText, descriere[i].getAttribute('data-tooltip'), t]);
@@ -381,7 +387,7 @@ const showValues = () =>{
                 }
                 
             }
-        });
+        });        
 
         if(!check_index){ alertify.error("Nu ai completat indecsii necesari cotelor relevante SPC"); return false; }
 
@@ -407,6 +413,12 @@ const showValues = () =>{
         let metrolog = $("#metrolog").val().replace(/ /g,"");
         let masina = $("#masina").val();
         let obs = $("#observatii").val();
+
+        if(nok && obs===""){
+            $("#observatii").addClass("pulse")
+            alertify.error("Nu ati completat rubrica observatii!")
+            return false
+        }
 
         if( produs === "" ){
             alertify.error("Nu ati completat produsul!")
@@ -460,6 +472,9 @@ document.querySelector('#prev').addEventListener('click', showPrevPage);
 document.querySelector('#next').addEventListener('click', showNextPage);
 document.querySelector('#update').addEventListener('click', showValues);
 
+$("#observatii").on("focusin", function(){
+    $(this).removeClass("pulse")
+})
 
 // UPLOAD FILE DRAG & DROP
 function onFile() {

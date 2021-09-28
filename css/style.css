@@ -245,13 +245,27 @@
   font-style: italic;
 }
 
-#container .wrap-content .wrap-meniu .sugestii {
-  -ms-grid-row: 3;
-  -ms-grid-row-span: 1;
-  grid-row: 3/4;
-  -ms-grid-column: 1;
-  -ms-grid-column-span: 1;
-  grid-column: 1/2;
+#container .wrap-content .wrap-meniu .pulse {
+  -webkit-animation: pulse .5s infinite;
+          animation: pulse .5s infinite;
+}
+
+@-webkit-keyframes pulse {
+  0% {
+    background-color: #f7d5d5;
+  }
+  50% {
+    background-color: #ff9595;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    background-color: #f7d5d5;
+  }
+  50% {
+    background-color: #ff9595;
+  }
 }
 
 #container .wrap-content .wrap-meniu .btn-holder {

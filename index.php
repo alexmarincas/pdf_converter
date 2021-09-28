@@ -52,13 +52,6 @@ include_once("../redirect.php");
 
             <textarea id="observatii" placeholder='Observații'></textarea>
 
-            <div class="sugestii">
-                <div class="sugestie"></div>
-                <div class="sugestie"></div>
-                <div class="sugestie"></div>
-                <div class="sugestie"></div>
-            </div>
-
             <div class="btn-holder">
                 <button id="save" class="inactiv">Save template</button>
                 <button id="update" class="inactiv">Update SPC</button>
