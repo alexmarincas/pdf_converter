@@ -4,14 +4,15 @@ $(".canvas_holder").resizable();
 const url = "./docs/pdf.pdf";
 
 let pdfDoc = null,
-    pageNum = 1,
-    scale = 1.5,
-    isPortrait = true,
-    textItems = [],
-    pageIsRendering = false,
-    pageNumIsPending = null,
-    controlor = "";
+pageNum = 1,
+scale = 1.5,
+isPortrait = true,
+textItems = [],
+pageIsRendering = false,
+pageNumIsPending = null,
+controlor = "";
 
+let produs = "";
 let sirIndexSPC = []
 let sirIndexPDF = []
 let sirValori = []
@@ -72,8 +73,38 @@ const eFaraMin = elem =>{
     return rezultat;
 };
 
-let produs = "";
+// GET FAVORITES
+const get_favorites = () =>{
+    $.post("php/getIndex.php", {produs}, function(data){   
 
+        console.log(data)
+        
+        let ind = JSON.parse(data.ind_spc);
+
+        let contorSpc = 0;
+
+        JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
+            // console.log(el+" - "+i);
+            $(".checkbox").eq(el).prop("checked", false);
+        });
+
+        JSON.parse(data.check_fav).forEach( i =>{
+            $(".checkbox_client").eq(i).prop("checked", true);
+            
+            if(typeof ind[contorSpc] === 'undefined'){
+
+            }else{
+                $(".index_spc").eq(i).val(ind[contorSpc]);
+            }
+
+            contorSpc++;
+        });
+
+        
+    }, "json");
+}
+
+$("#favorites").on("click", get_favorites)
 
 // Get PDF content as text
 const text = ()=>{
@@ -263,34 +294,7 @@ const text = ()=>{
                         $("#save").removeClass("inactiv"); 
                         $(".loading").removeClass('visible');
                         // DEBIFARE / BIFARE CASUTE
-                        $.post("php/getIndex.php", {produs}, function(data){   
-
-
-                            // console.log(data)
-                            
-                            let ind = JSON.parse(data.ind_spc);
-
-                            let contorSpc = 0;
-
-                            JSON.parse(data.uncheck_reg).forEach( (el, i) =>{
-                                // console.log(el+" - "+i);
-                                $(".checkbox").eq(el).prop("checked", false);
-                            });
-
-                            JSON.parse(data.check_fav).forEach( i =>{
-                                $(".checkbox_client").eq(i).prop("checked", true);
-                                
-                                if(typeof ind[contorSpc] === 'undefined'){
-
-                                }else{
-                                    $(".index_spc").eq(i).val(ind[contorSpc]);
-                                }
-
-                                contorSpc++;
-                            });
-
-                            
-                        }, "json");
+                        get_favorites()
                     }
 
                 });
@@ -303,10 +307,10 @@ const text = ()=>{
     }
     
     myLoop(x);
-
-    
-        
+            
 };
+
+
 
 // Check for pages rendering
 const queueRenderPage = num =>{
@@ -648,3 +652,14 @@ $("#save").on("click", function(){
         }
     }, "json")
 }) 
+
+$(document).on("click", ".nrCrt", function(){
+    const i = $(this).index(".nrCrt")
+    alertify.confirm("Esti sigur(a) ca vrei sa stergi acest element?").set("onok", function(){
+        $(".masuratoare:eq("+i+")").remove()
+        $(".index_spc").val("")
+        $(".checkbox_client").prop("checked", false)
+        $(".checkbox").prop("checked", true)
+        get_favorites()
+    })
+})

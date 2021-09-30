@@ -26,7 +26,7 @@ include_once("../redirect.php");
 
     <div id="meniu">
         <button id="prev">Prev</button>
-        <p><span id="page-num"></span> / <span id="pages"></span></p>
+        <p id='favorites' title='Click aici pentru refresh cote favorite'><span id="page-num"></span> / <span id="pages"></span></p>
         <button id="next">Next</button>
     </div>
     
