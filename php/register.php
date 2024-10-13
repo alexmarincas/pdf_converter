@@ -1,5 +1,5 @@
 <?php
-include_once "../../conn/conn.php";
+include_once "../../conn/connPDO.php";
 
 $connection = conectare_DB("thomas");
 $connectionSPC = conectare_DB("spc");
@@ -9,19 +9,23 @@ $connectionSPCmetrologie = conectare_DB("spc_masuratori");
 function stampToName($stampile){
     $pdo = conectare_DB('productie');
     $arr = explode(",",str_replace(" ","",$stampile));
-    $persoane = array();
+    $persoane = [];
 
     for($x=0; $x<sizeof($arr); $x++){
-        $stmt = mysqli_query($pdo, "SELECT Nume, Prenume FROM personal WHERE Stampila = '$arr[$x]' OR Stampila_veche = '$arr[$x]' ");
-        if( mysqli_num_rows($stmt) ){                    
-            while($num = mysqli_fetch_assoc($stmt) ){
+        $stmt = $pdo->prepare( "SELECT Nume, Prenume FROM personal WHERE Stampila = :stampila OR Stampila_veche = :stampila ");
+        $stmt->execute(["stampila"=>$arr[$x]]);
+        $query = $stmt->fetchAll();
+        
+        if($stmt->rowCount()){                   
+            foreach($query as $num ){
                 $numeIntreg = $num['Nume']." ".$num['Prenume'];
                 array_push($persoane, $numeIntreg);
             }
         }
     }
 
-    mysqli_close($pdo);
+    $stmt = null;
+    $pdo = null;
 
     if(sizeof($persoane)){
         return implode(", ", $persoane);
@@ -34,15 +38,22 @@ function stampToName($stampile){
 // GET PROJECT RESPONSIBLE INFO
 function getResponsibleEmail($produs){
     $conn = conectare_DB('thomas');
-    $query = mysqli_query($conn, "SELECT Responsabil, Email FROM proiecte WHERE proiecte.Proiect = (SELECT Proiect FROM produse_trp WHERE Produs = '$produs')");
+    $stmt = $conn->prepare("SELECT Responsabil, Email FROM proiecte WHERE proiecte.Proiect = (SELECT Proiect FROM produse_trp WHERE Produs = :produs)");
+    $stmt->execute(["produs"=>$produs]);
+    $query = $stmt->fetchAll();
+
     $responsabil = '';
     $email = '';
-    while( $num = mysqli_fetch_assoc($query) ){
-        $responsabil = $num['Responsabil'];
-        $email = $num['Email'];
+
+    if($stmt->rowCount()){
+        foreach($query as $num ){
+            $responsabil = $num['Responsabil'];
+            $email = $num['Email'];
+        }
     }
 
-    mysqli_close($conn);
+    $stmt = null;
+    $conn = null;
     
     return array($responsabil, $email);
 }
@@ -67,14 +78,14 @@ function formatData($data){
 }
 
 // VARIABLES
-$produs = mysqli_real_escape_string($connection, $_POST['produs']);
-$cavitate = mysqli_real_escape_string($connection, $_POST['cav']);
-$data_productiei = formatData( mysqli_real_escape_string($connection, $_POST['data']) );
-$ora = str_replace(".", ":", mysqli_real_escape_string($connection, $_POST['ora']) );
-$id = mysqli_real_escape_string($connection, $_POST['id']);
-$indProd = mysqli_real_escape_string($connection, $_POST['ind_prod']);
-$controlor_metrolog = mysqli_real_escape_string($connection, $_POST['metrolog']);
-$obs = mysqli_real_escape_string($connection, $_POST['obs']);
+$produs = $_POST['produs'];
+$cavitate = $_POST['cav'];
+$data_productiei = formatData( $_POST['data']);
+$ora = str_replace(".", ":", $_POST['ora']);
+$id = $_POST['id'];
+$indProd = $_POST['ind_prod'];
+$controlor_metrolog = $_POST['metrolog'];
+$obs = $_POST['obs'];
 $masina = $_POST['masina'];
 $luna = getLuna($data_productiei);
 
@@ -93,24 +104,32 @@ if(stripos("&", $cavitate)===false){
         $indSPC = $_POST['indSPC'];
         $toleranteClient = $_POST['toleranteClient'];
 
-        $query_produs = mysqli_query($connection, "SELECT Cavitati, Timp_masurare FROM produse_trp WHERE Produs='$produs'");
+        $stmt = $connection->prepare("SELECT Cavitati, Timp_masurare FROM produse_trp WHERE Produs=:produs");
+        $stmt->execute(["produs"=>$produs]);
+        $query_produs = $stmt->fetchAll();
 
         $cavitati = 0;
         $timp_masurare = 0;
 
-        while($num = mysqli_fetch_assoc($query_produs)){
+        foreach($query_produs as $num ){
             $cavitati = $num['Cavitati'];
             $timp_masurare = $num['Timp_masurare'];
         }
 
-        mysqli_query($connection, "UPDATE produse_trp SET Valori_metrologie='$indProd' WHERE Produs='$produs'");
-        mysqli_close($connection);
+        $stmt = $connection->prepare("UPDATE produse_trp SET Valori_metrologie=:indProd WHERE Produs=:produs");
+        $stmt->execute(["indProd"=>$indProd, "produs"=>$produs]);
+        
+        $connection = null;
+        $stmt = null;
         
         // UPDATE SPC BASED ON THE ID
         // READ 
-        $get_spc_string = mysqli_query($connectionSPC, "SELECT Masuratori, OperatorQA, ObservatiiQA FROM masuratori WHERE id='$id'");
-        if( mysqli_num_rows( $get_spc_string ) ){
-            while($num = mysqli_fetch_assoc($get_spc_string)){
+        $stmt = $connectionSPC->prepare("SELECT Masuratori, OperatorQA, ObservatiiQA FROM masuratori WHERE id='$id'");
+        $stmt->execute(["id"=>$id]);
+        $get_spc_string = $stmt->fetchAll();
+
+        if( $stmt->rowCount() ){
+            foreach($get_spc_string as $num ){
                 $masuratori = $num['Masuratori'];
                 $controlor = $num['OperatorQA'];
                 $observatiiQA = $num['ObservatiiQA'];
@@ -204,11 +223,16 @@ if(stripos("&", $cavitate)===false){
             }
 
             // UPDATE
-            mysqli_query($connectionSPC, "UPDATE masuratori SET Masuratori='$sir_masuratori_string', OperatorQA='$controlor', ObservatiiQA='$observatiiQA' WHERE id='$id'");
+            $stmt = $connectionSPC->prepare("UPDATE masuratori SET Masuratori=:sir_masuratori_string, OperatorQA=:controlor, ObservatiiQA=:observatiiQA WHERE id=:id");
+            $stmt->execute(["sir_masuratori_string"=>$sir_masuratori_string, "controlor"=>$controlor, "observatiiQA"=>$observatiiQA, "id"=>$id]);
+
             if($email_body !== ""){
-                mysqli_query($connectionSPC, "UPDATE masuratori SET NOK='1' WHERE id='$id'");
+                $stmt = $connectionSPC->prepare("UPDATE masuratori SET NOK='1' WHERE id=:id");
+                $stmt->execute(["id"=>$id]);
             }
-            mysqli_close($connectionSPC);
+
+            $connectionSPC = null;
+            $stmt = null;
 
             $nume_controlor_metrolog = stampToName( $controlor_metrolog );
 
@@ -299,9 +323,11 @@ if(stripos("&", $cavitate)===false){
             }
             
             // STORE ALL VALUES INTO spc_masuratori DB - a new column must be created
-            mysqli_query($connectionSPCmetrologie, "INSERT INTO masuratori (Produs, Cavitati, Data_productiei, Ora_injectarii, Luna, Stadiu, Masina, Pentru, Nume, Data_finalizarii, Timp_masurare, Program, SPC, Valori_masurate) VALUES ('$produs', '1', '$data_productiei', '$ora', '$luna', '2', '$masina', '0', '$nume_controlor_metrolog', NOW(), '$timp_masurare', '0', '1', '$valoriMasurate' )");
+            $stmt = $connectionSPCmetrologie->prepare("INSERT INTO masuratori (Produs, Cavitati, Data_productiei, Ora_injectarii, Luna, Stadiu, Masina, Pentru, Nume, Data_finalizarii, Timp_masurare, Program, SPC, Valori_masurate) VALUES ('$produs', '1', '$data_productiei', '$ora', '$luna', '2', '$masina', '0', '$nume_controlor_metrolog', NOW(), '$timp_masurare', '0', '1', '$valoriMasurate' )");
+            $stmt->execute(["produs"=>$produs, "data_productiei"=>$data_productiei, "ora"=>$ora, "luna"=>$luna, "masina"=>$masina, "nume_controlor_metrolog"=>$nume_controlor_metrolog, "timp_masurare"=>$timp_masurare, "valoriMasurate"=>$valoriMasurate]);
 
-            mysqli_close($connectionSPCmetrologie);
+            $stmt = null;
+            $connectionSPCmetrologie = null;
 
             // $response = $luna;
             // $response = $data_productiei;
@@ -315,7 +341,7 @@ if(stripos("&", $cavitate)===false){
             echo json_encode(array("status"=>200, "response"=>$response));
             
         }else{
-            mysqli_close($connectionSPC);
+            $connectionSPC = null;
             echo json_encode(array("status"=>400, "error" => "ID-ul mentionat nu exista!"));
         }
 
