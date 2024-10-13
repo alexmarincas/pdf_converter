@@ -1,19 +1,21 @@
 <?php
-include_once "../../conn/conn.php";
+include_once "../../conn/connPDO.php";
 
 $connection = conectare_DB("thomas");
 
-$produs = mysqli_real_escape_string($connection, str_replace(" ", "", $_POST['produs']));
+$produs = str_replace(" ", "", $_POST['produs']);
 
-$query = mysqli_query($connection, "SELECT Valori_metrologie FROM produse_trp WHERE Produs = '$produs'");
+$query = $connection->prepare("SELECT Valori_metrologie FROM produse_trp WHERE Produs = :produs");
+$stmt->execute(['produs' => $produs]);
+$query = $stmt->fetchAll();
 
 $rez = "";
 
-while($num = mysqli_fetch_assoc($query)){
-    $rez = $num['Valori_metrologie'];
+if($stmt->rowCount()){
+    foreach($query as $num ){
+        $rez = $num['Valori_metrologie'];
+    }
 }
-
-mysqli_close($connection);
 
 $rez = explode("|",$rez);
 
@@ -26,4 +28,5 @@ if(sizeof($rez)){
     echo json_encode(array("check_fav"=>"", "uncheck_reg"=>"", "ind_spc"=>""));
 }
 
-?>
+$stmt = null;
+$connection = null;

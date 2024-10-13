@@ -32,6 +32,3 @@ if($stmt->rowCount()){
 
 $stmt = null;
 $connection = null;
-
-
-?>
